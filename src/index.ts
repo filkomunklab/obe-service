@@ -1,12 +1,29 @@
-import express, { Application, NextFunction, Request, Response } from "express";
+import express, {
+  Application,
+  NextFunction,
+  Request,
+  Response,
+  Router,
+} from 'express';
+import http from 'http';
+import Config from './config/config';
 
 const app: Application = express();
-const port: number = process.env.PORT ? parseInt(process.env.PORT) : 3000;
+const httpServer = http.createServer(app);
+const RouterApi = Router();
 
-app.use("/", (req: Request, res: Response, next: NextFunction) => {
-  res.status(200).send("Hello World!");
-});
+app.use(express.json());
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
+app.use('/api', RouterApi);
+
+(async () => {
+  try {
+    RouterApi.use('/ping', require('./routes/ping'));
+
+    httpServer.listen(Config.PORT, () =>
+      console.log(`Server running on port ${Config.PORT}`)
+    );
+  } catch (error) {
+    console.log(`Error: ${error}`);
+  }
+})();
