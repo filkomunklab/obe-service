@@ -143,6 +143,15 @@ model Student {
   @@index([studentEmail, personalEmail])
 }
 
+model SemesterRecord {
+  id        String   @id @default(uuid())
+  semester  Semester
+  startYear Int      @db.SmallInt()
+  endYear   Int      @db.SmallInt()
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt()
+}
+
 model MajorGlobal {
   id        String    @id
   shortName String
@@ -669,9 +678,9 @@ model Subject {
   Curriculum_Subject  Curriculum_Subject[]
   PrerequisiteSubject PrerequisiteSubject[]
   Subject_Cpl         Subject_Cpl[]
-  Cpmk                Cpmk[]
   Grades              Grades[]
   ListOfRequest       ListOfRequest[]
+  Rps                 Rps[]
 }
 
 model Curriculum_Subject {
@@ -725,8 +734,6 @@ model Subject_Cpl {
 
 model Cpmk {
   id                 String          @id
-  subject            Subject         @relation(fields: [subjectId], references: [id])
-  subjectId          String
   rps                Rps             @relation(fields: [rpsId], references: [id])
   rpsId              String
   description        String
@@ -790,6 +797,8 @@ model Rps {
   teamTeaching         String[]
   minPassStudents      String
   minPassGrade         String
+  Subject              Subject  @relation(fields: [subjectId], references: [id])
+  subjectId            String
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 

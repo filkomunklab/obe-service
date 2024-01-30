@@ -8,7 +8,8 @@
     "start": "npx nodemon",
     "build": "tsc",
     "db:migrate": "npx prisma migrate dev",
-    "db:reset": "npx prisma migrate reset"
+    "db:reset": "npx prisma migrate reset",
+    "db:pull": "npx prisma db pull"
   },
   "author": "",
   "license": "ISC",
