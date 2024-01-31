@@ -344,7 +344,7 @@
 			]
 		},
 		{
-			"name": "SubjectRps",
+			"name": "CurriculumRps",
 			"request": {
 				"method": "GET",
 				"header": [],
@@ -370,18 +370,18 @@
 			},
 			"response": [
 				{
-					"name": "SubjectRps",
+					"name": "CurriculumRps",
 					"originalRequest": {
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{BASE_URL}}/api/subject/:id/rps-list",
+							"raw": "{{BASE_URL}}/api/curriculum/:id/rps-list",
 							"host": [
 								"{{BASE_URL}}"
 							],
 							"path": [
 								"api",
-								"subject",
+								"curriculum",
 								":id",
 								"rps-list"
 							],
@@ -405,7 +405,7 @@
 						}
 					],
 					"cookie": [],
-					"body": "{\n    \"id\": \"e589949d-8d99-4992-9e77-d3c8677152f6\",\n    \"code\": \"IS3155\",\n    \"englishName\": \"Business Process Reengineering\",\n    \"indonesiaName\": \"Rekayasa Proses Bisnis\",\n    \"_count\": {\n        \"totalRps\": 26\n    },\n    \"Rps\": [\n        {\n            \"semester\": 5,\n            \"Teacher\": {\n                \"firstName\": \"Andrew Tanny\",\n                \"lastName\": \"Liem\"\n            }\n        },\n        {\n            \"semester\": 5,\n            \"Teacher\": {\n                \"firstName\": \"Andrew Tanny\",\n                \"lastName\": \"Liem\"\n            }\n        }\n    ]\n}"
+					"body": "{\n    \"id\": \"e589949d-8d99-4992-9e77-d3c8677152f6\",\n    \"major\": \"IF\",\n    \"year\": \"2023\",\n    \"_count\": {\n        \"rps\": 26\n    },\n    \"Rps\": [\n        {\n            \"Teacher\": {\n                \"firstName\": \"Andrew T.\",\n                \"lastName\": \"Liem\"\n            },\n            \"Subject\": {\n                \"id\": \"9adba30a-35c7-412f-a6fd-a379ac1bc8fa\",\n                \"englishName\": \"Business Process Reengineering\",\n                \"indonesiaName\": \"Rekayasa Proses Bisnis\",\n                \"Curriculum_Subject\": {\n                    \"semester\": 5\n                }\n            }\n        }\n    ]\n}"
 				}
 			]
 		}
