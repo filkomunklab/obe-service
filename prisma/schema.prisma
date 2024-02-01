@@ -709,39 +709,42 @@ model PrerequisiteSubject {
 }
 
 model Cpl {
-  id           String        @id @default(uuid())
+  id           String         @id @default(uuid())
   code         String
   description  String
-  curriculum   Curriculum    @relation(fields: [curriculumId], references: [id])
+  curriculum   Curriculum     @relation(fields: [curriculumId], references: [id])
   curriculumId String
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
   Subject_Cpl  Subject_Cpl[]
+  SupportedCpl SupportedCpl[]
 
   @@unique([code, curriculumId])
 }
 
 model Subject_Cpl {
-  id            String          @id
-  subject       Subject         @relation(fields: [subjectId], references: [id])
-  subjectId     String
-  cpl           Cpl             @relation(fields: [cplId], references: [id])
-  cplId         String
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  CplListOnCpmk CplListOnCpmk[]
+  id        String   @id
+  subject   Subject  @relation(fields: [subjectId], references: [id])
+  subjectId String
+  cpl       Cpl      @relation(fields: [cplId], references: [id])
+  cplId     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Cpmk {
-  id                 String          @id
-  rps                Rps             @relation(fields: [rpsId], references: [id])
+  id                 String         @id
+  cpmkCode           String
+  rps                Rps            @relation(fields: [rpsId], references: [id])
   rpsId              String
   description        String
   totalGradingWeight String
-  createdAt          DateTime        @default(now())
-  updatedAt          DateTime        @updatedAt
-  CplListOnCpmk      CplListOnCpmk[]
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  SupportedCpl       SupportedCpl[]
   CpmkGrading        CpmkGrading[]
+
+  @@unique([rpsId, cpmkCode])
 }
 
 model CpmkGrading {
@@ -767,47 +770,42 @@ model StudentGrade {
   updatedAt      DateTime    @updatedAt
 }
 
-model CplListOnCpmk {
-  cpmk      Cpmk        @relation(fields: [cpmkId], references: [id])
-  cpmkId    String
-  cplList   Subject_Cpl @relation(fields: [cplListId], references: [id])
-  cplListId String
+model SupportedCpl {
+  cpmk   Cpmk   @relation(fields: [cpmkId], references: [id])
+  cpmkId String
+  cpl    Cpl    @relation(fields: [cplId], references: [id])
+  cplId  String
 
-  @@unique([cpmkId, cplListId])
+  @@unique([cpmkId, cplId])
 }
 
 model Rps {
-  id                   String   @id @default(uuid())
-  subjectName          String
-  subjectCode          String
-  subjectFamily        String
-  subjectDescription   String
-  subjectCredit        Int
-  subjectWeight        Int
-  parallel             String   @db.Char(1)
-  semester             Int
-  schedule             String
-  rpsDeveloper         String
-  headOfExpertise      String
-  headOfProgramStudy   String
-  mainReferences       String[]
-  supportingReferences String[]
-  software             String
-  hadware              String
-  teamTeaching         String[]
-  minPassStudents      String
-  minPassGrade         String
-  Subject              Subject  @relation(fields: [subjectId], references: [id])
-  subjectId            String
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-
+  id                    String                  @id @default(uuid())
+  subjectFamily         String
+  subjectDescription    String
+  parallel              String                  @db.Char(1)
+  semester              Int
+  schedule              String
+  rpsDeveloper          String
+  headOfExpertise       String
+  headOfProgramStudy    String
+  mainReferences        String[]
+  supportingReferences  String[]
+  software              String
+  hadware               String
+  teamTeaching          String[]
+  minPassStudents       String
+  minPassGrade          String
+  Subject               Subject                 @relation(fields: [subjectId], references: [id])
+  subjectId             String
   teacher               Employee                @relation(fields: [teacherId], references: [nik])
   teacherId             String
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
   cpmk                  Cpmk[]
-  SubjectReqForRps      SubjectReqForRps[]
   MeetingPlan           MeetingPlan[]
   StudentAssignmentPlan StudentAssignmentPlan[]
+  ObeReportSummary      ObeReportSummary?
 }
 
 model MeetingPlan {
@@ -840,14 +838,23 @@ model StudentAssignmentPlan {
   rpsId                 String
 }
 
-model SubjectReqForRps {
-  Rps           Rps    @relation(fields: [rpsId], references: [id])
-  rpsId         String
-  subjectName   String
-  subjectCredit Int
-  subjectCode   String
-
-  @@unique([rpsId, subjectCode])
+model ObeReportSummary {
+  id               String @id @default(uuid())
+  Rps              Rps    @relation(fields: [rpsId], references: [id])
+  rpsId            String @unique
+  subjectName      String
+  curriculum       String
+  major            String
+  credits          Int
+  parallel         String @db.Char(1)
+  status           String
+  semester         String
+  teacher          String
+  schedule         String
+  highestCpmk      Float
+  lowestCpmk       Float
+  cpmkGradeSummary Json
+  studentCpmkGrade Json
 }
 
 // =================== OBE END ===================

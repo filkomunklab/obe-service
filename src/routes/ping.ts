@@ -1,11 +1,11 @@
-import express, { Router } from 'express';
+import express, { Router } from "express";
 
 const RouterPing = express.Router();
 
-RouterPing.get('/', (req, res) => {
+RouterPing.get("/", async (req, res) => {
   res.json({
     status: true,
-    message: 'pong',
+    message: "pong",
   });
 });
 
