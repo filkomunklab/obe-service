@@ -806,6 +806,7 @@ model Rps {
   MeetingPlan           MeetingPlan[]
   StudentAssignmentPlan StudentAssignmentPlan[]
   ObeReportSummary      ObeReportSummary?
+  ObeReportDetail       ObeReportDetail?
 }
 
 model MeetingPlan {
@@ -839,7 +840,6 @@ model StudentAssignmentPlan {
 }
 
 model ObeReportSummary {
-  id               String @id @default(uuid())
   Rps              Rps    @relation(fields: [rpsId], references: [id])
   rpsId            String @unique
   subjectName      String
@@ -855,6 +855,18 @@ model ObeReportSummary {
   lowestCpmk       Float
   cpmkGradeSummary Json
   studentCpmkGrade Json
+}
+
+model ObeReportDetail {
+  Rps           Rps    @relation(fields: [rpsId], references: [id])
+  rpsId         String @unique
+  major         String
+  credits       Int
+  parallel      String @db.Char(1)
+  teacher       String
+  schedule      String
+  gradingSystem Json
+  studentGrade  Json
 }
 
 // =================== OBE END ===================
