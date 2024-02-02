@@ -738,7 +738,7 @@ model Cpmk {
   rps                Rps            @relation(fields: [rpsId], references: [id])
   rpsId              String
   description        String
-  totalGradingWeight String
+  totalGradingWeight Int
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
   SupportedCpl       SupportedCpl[]
@@ -752,7 +752,7 @@ model CpmkGrading {
   Cpmk          Cpmk           @relation(fields: [cpmkId], references: [id])
   cpmkId        String
   gradingName   String
-  gradingWeight String
+  gradingWeight Int
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   StudentGrade  StudentGrade[]
@@ -760,8 +760,8 @@ model CpmkGrading {
 
 model StudentGrade {
   id             String      @id @default(uuid())
-  rawGrade       Int
-  calculateGrade Int
+  rawGrade       Float
+  calculateGrade Float
   Student        Student     @relation(fields: [studentNim], references: [nim])
   studentNim     String
   CpmkGrading    CpmkGrading @relation(fields: [cpmkGradingId], references: [id])
@@ -860,6 +860,7 @@ model ObeReportSummary {
 model ObeReportDetail {
   Rps           Rps    @relation(fields: [rpsId], references: [id])
   rpsId         String @unique
+  subjectName   String
   major         String
   credits       Int
   parallel      String @db.Char(1)
