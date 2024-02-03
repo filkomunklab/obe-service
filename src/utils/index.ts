@@ -1,3 +1,4 @@
 import parsePrerequisites from "./parsePrerequisites";
+import extractXlsx from "./extractXlsx";
 
-export { parsePrerequisites };
+export { parsePrerequisites, extractXlsx };

@@ -9,3 +9,9 @@ declare type CurriculumFile = {
   prerequisite?: string[];
   semester: number;
 };
+
+declare type Cpl = {
+  code: string;
+  description: string;
+  curriculumId: string;
+};

@@ -1,9 +1,8 @@
 import express from "express";
 import prisma from "../database";
 import multer from "multer";
-import xlsx from "xlsx";
-import { parsePrerequisites } from "../utils";
-import { CurriculumFile } from "../../global";
+import { extractXlsx, parsePrerequisites } from "../utils";
+import { Cpl, CurriculumFile } from "../../global";
 
 const upload = multer();
 
@@ -16,6 +15,7 @@ RouterCurriculum.get("/", async (req, res) => {
   });
 });
 
+// post Curriculum
 RouterCurriculum.post(
   "/",
   upload.single("curriculumFile"),
@@ -23,10 +23,7 @@ RouterCurriculum.post(
     const { major, year, headOfProgramStudyId } = req.body;
     const file = req.file;
 
-    const workbook = xlsx.read(file.buffer);
-    const sheetName = workbook.SheetNames[0]; // Assuming data is in the first sheet
-    const sheet = workbook.Sheets[sheetName];
-    const data = xlsx.utils.sheet_to_json(sheet);
+    const data = extractXlsx(file);
     const parsedData: CurriculumFile[] = data.map((row: any) => ({
       code: row.code,
       indonesiaName: row.indonesiaName,
@@ -93,6 +90,36 @@ RouterCurriculum.post(
     res.json({
       createCurriculum,
     });
+  }
+);
+
+// post Curriculum Cpl
+RouterCurriculum.post(
+  "/:id/cpl",
+  upload.single("curriculumCpl"),
+  async (req, res) => {
+    const { id } = req.params;
+    const file = req.file;
+
+    const data = extractXlsx(file);
+    const parsedData: Cpl[] = data.map((row: any) => ({
+      code: row.code,
+      description: row.description,
+      curriculumId: id,
+    }));
+
+    const result = await prisma.$transaction(async (prisma) => {
+      await prisma.cpl.createMany({
+        data: parsedData,
+      });
+      return await prisma.cpl.findMany({
+        where: {
+          curriculumId: id,
+        },
+      });
+    });
+
+    res.status(201).send(result);
   }
 );
 
