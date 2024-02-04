@@ -15,3 +15,8 @@ declare type Cpl = {
   description: string;
   curriculumId: string;
 };
+
+declare type Subject_Cpl = {
+  cplId: string;
+  subjectId: string;
+};

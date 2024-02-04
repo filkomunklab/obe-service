@@ -723,7 +723,7 @@ model Cpl {
 }
 
 model Subject_Cpl {
-  id        String   @id
+  id        String   @id @default(uuid())
   subject   Subject  @relation(fields: [subjectId], references: [id])
   subjectId String
   cpl       Cpl      @relation(fields: [cplId], references: [id])

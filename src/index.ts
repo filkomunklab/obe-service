@@ -5,6 +5,7 @@ import Config from "./config/config";
 //Router List
 import RouterPing from "./routes/ping";
 import RouterCurriculum from "./routes/curriculum";
+import RouterSubject from "./routes/subject";
 
 const app: Application = express();
 const httpServer = http.createServer(app);
@@ -17,6 +18,7 @@ app.use("/api", RouterApi);
   try {
     RouterApi.use("/ping", RouterPing);
     RouterApi.use("/curriculum", RouterCurriculum);
+    RouterApi.use("/subject", RouterSubject);
 
     httpServer.listen(Config.PORT, () =>
       console.log(`Server running on port ${Config.PORT}`)
