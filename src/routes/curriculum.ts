@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Router } from "express";
 import prisma from "../database";
 import multer from "multer";
 import { extractXlsx, parsePrerequisites } from "../utils";
@@ -7,13 +7,6 @@ import { Cpl, CurriculumFile } from "../../global";
 const upload = multer();
 
 const RouterCurriculum = express.Router();
-
-RouterCurriculum.get("/", async (req, res) => {
-  res.json({
-    status: true,
-    message: "pong",
-  });
-});
 
 // post Curriculum
 RouterCurriculum.post(
@@ -122,5 +115,109 @@ RouterCurriculum.post(
     res.status(201).send(result);
   }
 );
+
+RouterCurriculum.get("/", async (req, res) => {
+  try {
+    const { major } = req.query;
+    const data = await prisma.curriculum.findMany({
+      where: {
+        major: (major as string) || undefined,
+      },
+      select: {
+        id: true,
+        major: true,
+        year: true,
+        headOfProgramStudy: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
+        _count: {
+          select: {
+            Curriculum_Subject: true,
+          },
+        },
+      },
+    });
+
+    if (!data || data.length === 0) {
+      return res.status(404).json({
+        status: false,
+        message: "Data not found",
+      });
+    }
+
+    res.json({
+      status: true,
+      message: "Data retrieved",
+      data,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      status: false,
+      message: "Internal server error",
+      error,
+    });
+  }
+});
+
+RouterCurriculum.get("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const data = await prisma.curriculum.findUnique({
+      where: {
+        id,
+      },
+      select: {
+        id: true,
+        major: true,
+        year: true,
+        Curriculum_Subject: {
+          select: {
+            subject: {
+              select: {
+                id: true,
+                code: true,
+                englishName: true,
+                indonesiaName: true,
+                Subject_Cpl: {
+                  select: {
+                    cpl: {
+                      select: {
+                        code: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!data) {
+      return res.status(404).json({
+        status: false,
+        message: "Data not found",
+      });
+    }
+
+    res.json({
+      status: true,
+      message: "Data retrieved",
+      data,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      status: false,
+      message: "Internal server error",
+      error,
+    });
+  }
+});
 
 export default RouterCurriculum;
