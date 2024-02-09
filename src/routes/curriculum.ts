@@ -1,8 +1,11 @@
-import express, { Router } from "express";
+import express from "express";
 import prisma from "../database";
 import multer from "multer";
 import { extractXlsx, parsePrerequisites } from "../utils";
 import { Cpl, CurriculumFile } from "../../global";
+import { validateSchema } from "../middleware";
+import { createCurriculumCplSchema } from "../schemas";
+import cplSchema from "../schemas/cplSchema";
 
 const upload = multer();
 
@@ -90,29 +93,68 @@ RouterCurriculum.post(
 RouterCurriculum.post(
   "/:id/cpl",
   upload.single("curriculumCpl"),
+  validateSchema(createCurriculumCplSchema),
   async (req, res) => {
     const { id } = req.params;
     const file = req.file;
 
-    const data = extractXlsx(file);
-    const parsedData: Cpl[] = data.map((row: any) => ({
-      code: row.code,
-      description: row.description,
-      curriculumId: id,
-    }));
+    try {
+      const data = extractXlsx(file);
+      const parsedData: Cpl[] = data.map((row: any) => ({
+        code: row.code,
+        description: row.description,
+        curriculumId: id,
+      }));
 
-    const result = await prisma.$transaction(async (prisma) => {
-      await prisma.cpl.createMany({
-        data: parsedData,
-      });
-      return await prisma.cpl.findMany({
-        where: {
-          curriculumId: id,
-        },
-      });
-    });
+      await cplSchema.validate(parsedData, { abortEarly: false });
 
-    res.status(201).send(result);
+      const result = await prisma.$transaction(async (prisma) => {
+        await prisma.cpl.createMany({
+          data: parsedData,
+        });
+        return await prisma.cpl.findMany({
+          where: {
+            curriculumId: id,
+          },
+        });
+      });
+
+      res.status(201).send({
+        status: true,
+        message: "Curriculum's CPLs created successuly",
+        data: result,
+      });
+    } catch (error) {
+      if (error.code === "P2002") {
+        return res.status(409).json({
+          status: false,
+          message: "Curriculum's CPLs already exist",
+          error,
+        });
+      }
+
+      if (error.code === "P2003") {
+        return res.status(404).json({
+          status: false,
+          message: "Curriculum not found",
+          error,
+        });
+      }
+
+      if (error.name === "ValidationError") {
+        return res.status(400).json({
+          status: false,
+          message: "Please provide valid data",
+          error: error.name,
+        });
+      }
+
+      res.status(500).json({
+        status: false,
+        message: "Internal server error",
+        error,
+      });
+    }
   }
 );
 
