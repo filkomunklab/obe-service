@@ -11,7 +11,8 @@
     "db:migrate": "npx prisma migrate dev",
     "db:reset": "npx prisma migrate reset",
     "db:pull": "npx prisma db pull",
-    "db:seed": "npx prisma db seed"
+    "db:seed": "npx prisma db seed",
+    "db:generate": "npx prisma generate"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

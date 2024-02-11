@@ -7,7 +7,9 @@ const validateSchema =
     try {
       const body = req.body;
       const file = req.file;
-      const payload = { ...body, file };
+      const params = req.params;
+      const query = req.query;
+      const payload = { ...body, file, ...params, ...query };
       await schema.validate(payload, { abortEarly: false });
       next();
     } catch (error) {

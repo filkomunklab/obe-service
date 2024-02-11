@@ -653,7 +653,7 @@ model Thesis_Link {
 model Curriculum {
   id                   String               @id @default(uuid())
   major                String               @db.VarChar(100)
-  year                 String               @db.VarChar(50)
+  year                 String               @db.Char(4)
   headOfProgramStudy   Employee             @relation(fields: [headOfProgramStudyId], references: [nik])
   headOfProgramStudyId String
   createdAt            DateTime             @default(now())
@@ -675,38 +675,34 @@ model Subject {
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 
-  Curriculum_Subject  Curriculum_Subject[]
-  PrerequisiteSubject PrerequisiteSubject[]
-  Subject_Cpl         Subject_Cpl[]
-  Grades              Grades[]
-  ListOfRequest       ListOfRequest[]
-  Rps                 Rps[]
+  Curriculum_Subject Curriculum_Subject[]
+  Subject_Cpl        Subject_Cpl[]
+  Grades             Grades[]
+  ListOfRequest      ListOfRequest[]
+  Rps                Rps[]
 }
 
 model Curriculum_Subject {
-  id                  String                @id @default(uuid())
-  curriculum          Curriculum            @relation(fields: [curriculumId], references: [id])
-  curriculumId        String
-  subject             Subject               @relation(fields: [subjectId], references: [id])
-  subjectId           String
-  semester            Int
-  createdAt           DateTime              @default(now())
-  updatedAt           DateTime              @updatedAt
-  PrerequisiteSubject PrerequisiteSubject[]
+  id           String     @id @default(uuid())
+  curriculum   Curriculum @relation(fields: [curriculumId], references: [id])
+  curriculumId String
+  subject      Subject    @relation(fields: [subjectId], references: [id])
+  subjectId    String
+  semester     Int
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  prerequisite String[]
 
   @@unique([curriculumId, subjectId])
 }
 
-model PrerequisiteSubject {
-  targetSubject         Curriculum_Subject @relation(fields: [targetSubjectId], references: [id])
-  targetSubjectId       String
-  prerequisiteSubject   Subject            @relation(fields: [prerequisiteSubjectId], references: [id])
-  prerequisiteSubjectId String
-  createdAt             DateTime           @default(now())
-  updatedAt             DateTime           @updatedAt
+// model Prerequisite {
+//   Subject   Curriculum_Subject @relation(fields: [subjectId], references: [id])
+//   subjectId String
+//   code      String
 
-  @@unique([targetSubjectId, prerequisiteSubjectId])
-}
+//   @@unique([subjectId, code])
+// }
 
 model Cpl {
   id           String         @id @default(uuid())
@@ -730,6 +726,8 @@ model Subject_Cpl {
   cplId     String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([subjectId, cplId])
 }
 
 model Cpmk {

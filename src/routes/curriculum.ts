@@ -4,8 +4,10 @@ import multer from "multer";
 import { extractXlsx, parsePrerequisites } from "../utils";
 import { Cpl, CurriculumFile } from "../../global";
 import { validateSchema } from "../middleware";
-import { createCurriculumCplSchema } from "../schemas";
+import { createCurriculumCplSchema, createCurriculumSchema } from "../schemas";
 import cplSchema from "../schemas/cplSchema";
+import curriculumSchema from "../schemas/curriculumSchema";
+import { ValidationError } from "yup";
 
 const upload = multer();
 
@@ -15,77 +17,111 @@ const RouterCurriculum = express.Router();
 RouterCurriculum.post(
   "/",
   upload.single("curriculumFile"),
+  validateSchema(createCurriculumSchema),
   async (req, res) => {
     const { major, year, headOfProgramStudyId } = req.body;
     const file = req.file;
 
-    const data = extractXlsx(file);
-    const parsedData: CurriculumFile[] = data.map((row: any) => ({
-      code: row.code,
-      indonesiaName: row.indonesiaName,
-      englishName: row.englishName,
-      credits: parseInt(row.credits),
-      type: row.type,
-      prerequisite: parsePrerequisites(row.prerequisite),
-      semester: parseInt(row.semester),
-    }));
+    try {
+      const data = extractXlsx(file);
+      const parsedData: CurriculumFile[] = data.map((row: any) => ({
+        code: row.code,
+        indonesiaName: row.indonesiaName,
+        englishName: row.englishName,
+        credits: parseInt(row.credits),
+        type: row.type,
+        prerequisite: parsePrerequisites(row.prerequisite),
+        semester: parseInt(row.semester),
+      }));
 
-    const createCurriculum = await prisma.$transaction(async (prisma) => {
-      const curriculum = await prisma.curriculum.create({
-        data: {
-          major,
-          year,
-          headOfProgramStudyId,
-        },
-      });
+      await curriculumSchema.validate(parsedData, { abortEarly: false });
 
-      const subjectPayload = parsedData.map((subject) => {
-        const { prerequisite, semester, ...rest } = subject;
-        return rest;
-      });
-
-      await prisma.subject.createMany({
-        data: subjectPayload,
-      });
-
-      const subjects = await prisma.subject.findMany({
-        where: {
-          code: {
-            in: parsedData.map((subject) => subject.code),
+      const createCurriculum = await prisma.$transaction(async (prisma) => {
+        const curriculum = await prisma.curriculum.create({
+          data: {
+            major,
+            year,
+            headOfProgramStudyId,
           },
-        },
-        select: {
-          id: true,
-          code: true,
-        },
-      });
+        });
 
-      await prisma.curriculum_Subject.createMany({
-        data: subjects.map((subject) => ({
-          curriculumId: curriculum.id,
-          subjectId: subject.id,
-          semester: parsedData.find((data) => data.code === subject.code)
-            .semester,
-        })),
-      });
+        const subjectPayload = parsedData.map((subject) => {
+          const { prerequisite, semester, ...rest } = subject;
+          return rest;
+        });
 
-      return await prisma.curriculum.findUnique({
-        where: {
-          id: curriculum.id,
-        },
-        include: {
-          Curriculum_Subject: {
-            include: {
-              subject: true,
+        await prisma.subject.createMany({
+          data: subjectPayload,
+        });
+
+        const subjects = await prisma.subject.findMany({
+          where: {
+            code: {
+              in: parsedData.map((subject) => subject.code),
             },
           },
-        },
-      });
-    });
+          select: {
+            id: true,
+            code: true,
+          },
+        });
 
-    res.json({
-      createCurriculum,
-    });
+        await prisma.curriculum_Subject.createMany({
+          data: subjects.map((subject) => ({
+            curriculumId: curriculum.id,
+            subjectId: subject.id,
+            prerequisite:
+              parsedData.find((data) => data.code === subject.code)
+                ?.prerequisite || [],
+            semester: parsedData.find((data) => data.code === subject.code)
+              .semester,
+          })),
+        });
+
+        return await prisma.curriculum.findUnique({
+          where: {
+            id: curriculum.id,
+          },
+          include: {
+            Curriculum_Subject: {
+              include: {
+                subject: true,
+              },
+            },
+          },
+        });
+      });
+
+      res.status(201).json({
+        status: true,
+        message: "Curriculum created successfully",
+        data: createCurriculum,
+      });
+    } catch (error) {
+      if (error.name === "ValidationError") {
+        return res.status(400).json({
+          status: false,
+          message: "Please provide valid xlsx data",
+          error: error.inner.map((err: ValidationError) => err.message),
+        });
+      }
+
+      if (error.code === "P2002") {
+        return res.status(409).json({
+          status: false,
+          message: "Curriculum already exist",
+          error,
+        });
+      }
+
+      console.log(error);
+
+      res.status(500).json({
+        status: false,
+        message: "Internal server error",
+        error,
+      });
+    }
   }
 );
 
