@@ -52,6 +52,7 @@ RouterCurriculum.post(
 
         await prisma.subject.createMany({
           data: subjectPayload,
+          skipDuplicates: true,
         });
 
         const subjects = await prisma.subject.findMany({
@@ -83,6 +84,11 @@ RouterCurriculum.post(
             id: curriculum.id,
           },
           include: {
+            _count: {
+              select: {
+                Curriculum_Subject: true,
+              },
+            },
             Curriculum_Subject: {
               include: {
                 subject: true,

@@ -667,7 +667,7 @@ model Curriculum {
 
 model Subject {
   id            String      @id @default(uuid())
-  code          String
+  code          String      @unique
   englishName   String
   indonesiaName String
   credits       Int
