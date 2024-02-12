@@ -1,4 +1,11 @@
-import { SubjectType } from "@prisma/client";
+import {
+  Cpmk,
+  SubjectType,
+  GradingSystem,
+  CpmkGrading,
+  MeetingPlan,
+  StudentAssignmentPlan,
+} from "@prisma/client";
 
 declare type CurriculumFile = {
   code: string;
@@ -19,4 +26,32 @@ declare type Cpl = {
 declare type Subject_Cpl = {
   cplId: string;
   subjectId: string;
+};
+
+type NewCpmkGrading = Omit<CpmkGrading, "id" | "rpsId"> & {
+  gradingSystem: Pick<GradingSystem, "gradingName" | "gradingWeight">[];
+};
+
+declare type CreateRps = {
+  teacherId: string;
+  subjectId: string;
+  subjectFamily: string;
+  subjectDescription: string;
+  parallel: string;
+  semester: number;
+  schedule: string;
+  rpsDeveloper: string;
+  headOfExpertise: string;
+  headOfProgramStudy: string;
+  cpmk: ({ supportedCplIds: string[] } & Pick<Cpmk, "description" | "code">)[];
+  cpmkGrading: NewCpmkGrading[];
+  mainReferences: string[];
+  supportingReferences: string[];
+  software: string;
+  hardware: string;
+  teamTeaching: string[];
+  minPassStudents: string;
+  minPassGrade: string;
+  meetingPlan: Omit<MeetingPlan, "id" | "rpdsId">[];
+  studentAssignmentPlan: Omit<StudentAssignmentPlan, "id" | "rpsId">[];
 };

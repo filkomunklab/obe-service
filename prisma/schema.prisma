@@ -731,24 +731,33 @@ model Subject_Cpl {
 }
 
 model Cpmk {
-  id                 String         @id
-  cpmkCode           String
-  rps                Rps            @relation(fields: [rpsId], references: [id])
-  rpsId              String
-  description        String
-  totalGradingWeight Int
-  createdAt          DateTime       @default(now())
-  updatedAt          DateTime       @updatedAt
-  SupportedCpl       SupportedCpl[]
-  CpmkGrading        CpmkGrading[]
+  id           String         @id @default(cuid())
+  code         String
+  rps          Rps            @relation(fields: [rpsId], references: [id])
+  rpsId        String
+  description  String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  SupportedCpl SupportedCpl[]
 
-  @@unique([rpsId, cpmkCode])
+  @@unique([rpsId, code])
 }
 
 model CpmkGrading {
+  id                 String          @id @default(uuid())
+  Rps                Rps             @relation(fields: [rpsId], references: [id])
+  rpsId              String
+  code               String
+  totalGradingWeight Int
+  GradingSystem      GradingSystem[]
+
+  @@unique([rpsId, code])
+}
+
+model GradingSystem {
   id            String         @id @default(uuid())
-  Cpmk          Cpmk           @relation(fields: [cpmkId], references: [id])
-  cpmkId        String
+  CpmkGrading   CpmkGrading    @relation(fields: [cpmkGradingId], references: [id])
+  cpmkGradingId String
   gradingName   String
   gradingWeight Int
   createdAt     DateTime       @default(now())
@@ -757,15 +766,16 @@ model CpmkGrading {
 }
 
 model StudentGrade {
-  id             String      @id @default(uuid())
-  rawGrade       Float
-  calculateGrade Float
-  Student        Student     @relation(fields: [studentNim], references: [nim])
-  studentNim     String
-  CpmkGrading    CpmkGrading @relation(fields: [cpmkGradingId], references: [id])
-  cpmkGradingId  String
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  id              String        @id @default(uuid())
+  rawGrade        Float
+  score           Float
+  calculateGrade  Float
+  Student         Student       @relation(fields: [studentNim], references: [nim])
+  studentNim      String
+  GradingSystem   GradingSystem @relation(fields: [gradingSystemId], references: [id])
+  gradingSystemId String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 }
 
 model SupportedCpl {
@@ -790,7 +800,7 @@ model Rps {
   mainReferences        String[]
   supportingReferences  String[]
   software              String
-  hadware               String
+  hardware              String
   teamTeaching          String[]
   minPassStudents       String
   minPassGrade          String
@@ -800,11 +810,12 @@ model Rps {
   teacherId             String
   createdAt             DateTime                @default(now())
   updatedAt             DateTime                @updatedAt
-  cpmk                  Cpmk[]
+  Cpmk                  Cpmk[]
   MeetingPlan           MeetingPlan[]
   StudentAssignmentPlan StudentAssignmentPlan[]
   ObeReportSummary      ObeReportSummary?
   ObeReportDetail       ObeReportDetail?
+  CpmkGrading           CpmkGrading[]
 }
 
 model MeetingPlan {
@@ -823,17 +834,17 @@ model MeetingPlan {
 }
 
 model StudentAssignmentPlan {
-  id                    String   @id @default(uuid())
+  id                    String @id @default(uuid())
   title                 String
   assignmentModel       String
-  referances            String[]
+  references            String
   subLearningOutcomes   String
   assignmentDescription String
   icbValuation          String
   dueSchedule           String
   others                String
   referenceList         String
-  rps                   Rps      @relation(fields: [rpsId], references: [id])
+  rps                   Rps    @relation(fields: [rpsId], references: [id])
   rpsId                 String
 }
 
