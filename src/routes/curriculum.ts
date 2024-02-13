@@ -4,7 +4,7 @@ import multer from "multer";
 import { extractXlsx, parsePrerequisites } from "../utils";
 import { Cpl, CurriculumFile } from "../../global";
 import { validateSchema } from "../middleware";
-import { createCurriculumCplSchema, createCurriculumSchema } from "../schemas";
+import { xlsxFileSchema, createCurriculumSchema } from "../schemas";
 import cplSchema from "../schemas/cplSchema";
 import curriculumSchema from "../schemas/curriculumSchema";
 import { ValidationError } from "yup";
@@ -135,7 +135,7 @@ RouterCurriculum.post(
 RouterCurriculum.post(
   "/:id/cpl",
   upload.single("curriculumCpl"),
-  validateSchema(createCurriculumCplSchema),
+  validateSchema(xlsxFileSchema),
   async (req, res) => {
     const { id } = req.params;
     const file = req.file;

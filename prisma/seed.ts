@@ -1,7 +1,64 @@
-const { PrismaClient } = require("@prisma/client");
+import { PrismaClient, UserRole } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
+  await prisma.$transaction(async (prisma) => {
+    await prisma.student.createMany({
+      data: [
+        {
+          gender: "MALE",
+          firstName: "Frances",
+          lastName: "Yong",
+          studentEmail: "frances@mail.com",
+          nim: "105021920001",
+          faculty: "Fakultas Ilmu Komputer",
+          major: "IF",
+          password:
+            "$2b$10$8i4.tmBGcK619R.lL6goi.GBRA3E7y25fARKYRqIPR46PjwlPV9eu",
+        },
+        {
+          gender: "MALE",
+          firstName: "Darell",
+          lastName: "Mona",
+          studentEmail: "darell@mail.com",
+          nim: "105021920002",
+          faculty: "Fakultas Ilmu Komputer",
+          major: "IF",
+          password:
+            "$2b$10$8i4.tmBGcK619R.lL6goi.GBRA3E7y25fARKYRqIPR46PjwlPV9eu",
+        },
+        {
+          gender: "MALE",
+          firstName: "Ganteng",
+          lastName: "Yuhu",
+          studentEmail: "yuhu@mail.com",
+          nim: "105021920003",
+          faculty: "Fakultas Ilmu Komputer",
+          major: "IF",
+          password:
+            "$2b$10$8i4.tmBGcK619R.lL6goi.GBRA3E7y25fARKYRqIPR46PjwlPV9eu",
+        },
+      ],
+    });
+
+    const students = await prisma.student.findMany({
+      select: {
+        nim: true,
+      },
+    });
+
+    const rolePayload: Pick<UserRole, "userId" | "role">[] = students.map(
+      (student) => ({
+        userId: student.nim,
+        role: "MAHASISWA",
+      })
+    );
+
+    await prisma.userRole.createMany({
+      data: rolePayload,
+    });
+  });
+
   // CREATE ADMIN
   await prisma.admin.create({
     data: {

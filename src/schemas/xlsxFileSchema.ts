@@ -8,7 +8,7 @@ const checkFileFormat = (value: any) => {
   );
 };
 
-const createCurriculumCplSchema = yup
+const xlsxFileSchema = yup
   .object()
   .shape({
     file: yup
@@ -18,4 +18,4 @@ const createCurriculumCplSchema = yup
   })
   .noUnknown();
 
-export default createCurriculumCplSchema;
+export default xlsxFileSchema;

@@ -138,6 +138,7 @@ model Student {
   Certificate           Certificate[]
   PreRegistrationData   PreRegistrationData[]
   StudentGrade          StudentGrade[]
+  ClassStudent          ClassStudent[]
 
   @@unique([firstName, lastName])
   @@index([studentEmail, personalEmail])
@@ -816,6 +817,17 @@ model Rps {
   ObeReportSummary      ObeReportSummary?
   ObeReportDetail       ObeReportDetail?
   CpmkGrading           CpmkGrading[]
+  ClassStudent          ClassStudent[]
+}
+
+model ClassStudent {
+  id         String  @id @default(uuid())
+  Student    Student @relation(fields: [studentNim], references: [nim])
+  studentNim String
+  Rps        Rps     @relation(fields: [rpsId], references: [id])
+  rpsId      String
+
+  @@unique([studentNim, rpsId])
 }
 
 model MeetingPlan {
