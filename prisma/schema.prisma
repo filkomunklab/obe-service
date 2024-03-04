@@ -770,13 +770,15 @@ model StudentGrade {
   id              String        @id @default(uuid())
   rawGrade        Float
   score           Float
-  calculateGrade  Float
+  calculateGrade  Float?
   Student         Student       @relation(fields: [studentNim], references: [nim])
   studentNim      String
   GradingSystem   GradingSystem @relation(fields: [gradingSystemId], references: [id])
   gradingSystemId String
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+
+  @@unique(name: "studentGradeId", [studentNim, gradingSystemId])
 }
 
 model SupportedCpl {
