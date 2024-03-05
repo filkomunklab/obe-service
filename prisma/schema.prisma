@@ -816,8 +816,8 @@ model Rps {
   Cpmk                  Cpmk[]
   MeetingPlan           MeetingPlan[]
   StudentAssignmentPlan StudentAssignmentPlan[]
-  ObeReportSummary      ObeReportSummary?
-  ObeReportDetail       ObeReportDetail?
+  ReportSummary         ReportSummary?
+  ReportDetail          ReportDetail?
   CpmkGrading           CpmkGrading[]
   ClassStudent          ClassStudent[]
 }
@@ -862,7 +862,7 @@ model StudentAssignmentPlan {
   rpsId                 String
 }
 
-model ObeReportSummary {
+model ReportSummary {
   Rps              Rps    @relation(fields: [rpsId], references: [id])
   rpsId            String @unique
   subjectName      String
@@ -880,7 +880,7 @@ model ObeReportSummary {
   studentCpmkGrade Json
 }
 
-model ObeReportDetail {
+model ReportDetail {
   Rps           Rps    @relation(fields: [rpsId], references: [id])
   rpsId         String @unique
   subjectName   String

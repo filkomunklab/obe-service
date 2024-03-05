@@ -55,3 +55,13 @@ declare type CreateRps = {
   meetingPlan: Omit<MeetingPlan, "id" | "rpdsId">[];
   studentAssignmentPlan: Omit<StudentAssignmentPlan, "id" | "rpsId">[];
 };
+
+declare type StudentGrade = { [key: string]: number };
+
+declare type studentCpmkGradeType = {
+  StudentGrade: StudentGrade;
+  average: number;
+  firstName: string;
+  lastName: string;
+  nim: string;
+};
