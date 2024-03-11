@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Router } from "express";
 import prisma from "../database";
 import { ReportDetail } from "@prisma/client";
 
@@ -129,6 +129,36 @@ RouterReportDetail.put("/:rpsId", async (req, res) => {
       status: true,
       message: "Data retrieved",
       data: result,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: false,
+      message: "Internal server error",
+      error,
+    });
+  }
+});
+
+RouterReportDetail.get("/:rpsId", async (req, res) => {
+  const { rpsId } = req.params;
+  try {
+    const data = await prisma.reportDetail.findUnique({
+      where: {
+        rpsId,
+      },
+    });
+
+    if (!data) {
+      return res.status(404).json({
+        status: false,
+        message: "Data not found",
+      });
+    }
+
+    return res.json({
+      status: true,
+      message: "Data retrieved",
+      data,
     });
   } catch (error) {
     return res.status(500).json({
