@@ -9,6 +9,7 @@ import RouterSubject from "./routes/subject";
 import RouterRps from "./routes/rps";
 import RouterStudentGrade from "./routes/studentGrade";
 import RouterReportSummary from "./routes/reportSummary";
+import RouterReportDetail from "./routes/reportDetail";
 
 const app: Application = express();
 const httpServer = http.createServer(app);
@@ -25,6 +26,7 @@ app.use("/api", RouterApi);
     RouterApi.use("/rps", RouterRps);
     RouterApi.use("/student-grade", RouterStudentGrade);
     RouterApi.use("/report-summary", RouterReportSummary);
+    RouterApi.use("/report-detail", RouterReportDetail);
 
     httpServer.listen(Config.PORT, () =>
       console.log(`Server running on port ${Config.PORT}`)
