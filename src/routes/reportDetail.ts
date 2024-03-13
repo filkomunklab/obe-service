@@ -78,26 +78,27 @@ RouterReportDetail.put("/:rpsId", async (req, res) => {
 
     const groupGradingSystem = rps.CpmkGrading.map((item) => {
       return {
-        ...item,
-        GradingSystem: item.GradingSystem.map((grading) => {
+        code: item.code,
+        studentList: students.map((student) => {
+          const matchedGrade = item.GradingSystem.map((grading) => {
+            const matchedStudentGrade = student.StudentGrade.find((grade) => {
+              return grade.gradingSystemId === grading.id;
+            });
+            const rawGrade = matchedStudentGrade
+              ? matchedStudentGrade.rawGrade
+              : 0;
+            const score = matchedStudentGrade ? matchedStudentGrade.score : 0;
+            return {
+              gradingName: grading.gradingName,
+              gradingId: grading.id,
+              rawGrade: rawGrade,
+              score: score,
+            };
+          });
           return {
-            gradingName: grading.gradingName,
-            gradingWeight: grading.gradingWeight,
-            id: grading.id,
-            cpmkGradingId: grading.cpmkGradingId,
-            student: students.map((student) => {
-              const matchedGrade = student.StudentGrade.find((grade) => {
-                return grade.gradingSystemId === grading.id;
-              });
-              const rawGrade = matchedGrade ? matchedGrade.rawGrade : 0;
-              const score = matchedGrade ? matchedGrade.score : 0;
-              return {
-                name: `${student.firstName} ${student.lastName}`,
-                nim: student.nim,
-                rawGrade: rawGrade,
-                score: score,
-              };
-            }),
+            name: `${student.firstName} ${student.lastName}`,
+            nim: student.nim,
+            grading: matchedGrade,
           };
         }),
       };
