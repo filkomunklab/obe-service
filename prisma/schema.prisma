@@ -170,6 +170,52 @@ model UserRole {
   updatedAt DateTime?
 }
 
+model Curriculum {
+  id                   String               @id @default(uuid())
+  major                String               @db.VarChar(100)
+  year                 String               @db.Char(4)
+  headOfProgramStudy   Employee             @relation(fields: [headOfProgramStudyId], references: [nik])
+  headOfProgramStudyId String
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  student              Student[]
+  Cpl                  Cpl[]
+  Curriculum_Subject   Curriculum_Subject[]
+
+  @@unique([major, year])
+}
+
+model Subject {
+  id            String      @id @default(uuid())
+  code          String      @unique
+  englishName   String
+  indonesiaName String
+  credits       Int
+  type          SubjectType
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  Curriculum_Subject Curriculum_Subject[]
+  Subject_Cpl        Subject_Cpl[]
+  Grades             Grades[]
+  ListOfRequest      ListOfRequest[]
+  Rps                Rps[]
+}
+
+model Curriculum_Subject {
+  id           String     @id @default(uuid())
+  curriculum   Curriculum @relation(fields: [curriculumId], references: [id])
+  curriculumId String
+  subject      Subject    @relation(fields: [subjectId], references: [id])
+  subjectId    String
+  semester     Int
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  prerequisite String[]
+
+  @@unique([curriculumId, subjectId])
+}
+
 //-------------------Klabat Bridge ----------------------//
 
 enum Gender {
@@ -651,59 +697,176 @@ model Thesis_Link {
 //   student_GradesId String?
 // }
 
-model Curriculum {
-  id                   String               @id @default(uuid())
-  major                String               @db.VarChar(100)
-  year                 String               @db.Char(4)
-  headOfProgramStudy   Employee             @relation(fields: [headOfProgramStudyId], references: [nik])
-  headOfProgramStudyId String
-  createdAt            DateTime             @default(now())
-  updatedAt            DateTime             @updatedAt
-  student              Student[]
-  Cpl                  Cpl[]
-  Curriculum_Subject   Curriculum_Subject[]
-
-  @@unique([major, year])
+model transaction_Grades {
+  id           String    @id @default(uuid())
+  submitedDate DateTime  @default(now()) @db.Timestamptz(3)
+  approveDate  DateTime? @db.Timestamptz(3)
+  semester     String
+  comments     String?
+  status       status    @default(WAITING)
+  Student      Student?  @relation(fields: [student_Nim], references: [nim])
+  student_Nim  String
+  Grades       Grades[]
 }
 
-model Subject {
-  id            String      @id @default(uuid())
-  code          String      @unique
-  englishName   String
-  indonesiaName String
-  credits       Int
-  type          SubjectType
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-
-  Curriculum_Subject Curriculum_Subject[]
-  Subject_Cpl        Subject_Cpl[]
-  Grades             Grades[]
-  ListOfRequest      ListOfRequest[]
-  Rps                Rps[]
+model Grades {
+  id                 String              @id @default(uuid())
+  grades             String?
+  lecturer           String
+  description        String?
+  submited_Date      DateTime            @default(now())
+  Subject            Subject?            @relation(fields: [subjectId], references: [id])
+  subjectId          String?
+  subjectName        String?
+  transaction_Grades transaction_Grades? @relation(fields: [transactionId], references: [id])
+  transactionId      String?
 }
 
-model Curriculum_Subject {
-  id           String     @id @default(uuid())
-  curriculum   Curriculum @relation(fields: [curriculumId], references: [id])
-  curriculumId String
-  subject      Subject    @relation(fields: [subjectId], references: [id])
-  subjectId    String
-  semester     Int
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  prerequisite String[]
-
-  @@unique([curriculumId, subjectId])
+model grades_access {
+  id              String    @id @default(uuid())
+  semester        String?
+  semester_period String?
+  major           Major
+  due_date        DateTime
+  createdAt       DateTime  @default(now())
+  isOpen          Boolean   @default(true)
+  Employee        Employee? @relation(fields: [employeeNik], references: [nik])
+  employeeNik     String?
 }
 
-// model Prerequisite {
-//   Subject   Curriculum_Subject @relation(fields: [subjectId], references: [id])
-//   subjectId String
-//   code      String
+model PreRegistration {
+  id                  String                @id @default(uuid())
+  semester            Semester
+  semesterPeriod      String
+  major               Major
+  dueDate             DateTime
+  isOpen              Boolean               @default(true)
+  Employee            Employee              @relation(fields: [employeeNik], references: [nik])
+  employeeNik         String
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  PreRegistrationData PreRegistrationData[]
+}
 
-//   @@unique([subjectId, code])
-// }
+model PreRegistrationData {
+  id                String          @id @default(uuid())
+  Student           Student         @relation(fields: [studentId], references: [nim])
+  studentId         String
+  Employee          Employee        @relation(fields: [employeeId], references: [nik])
+  employeeId        String
+  status            status?         @default(WAITING)
+  description       String?
+  comments          String?
+  submitDate        DateTime        @default(now())
+  approveDate       DateTime?
+  PreRegistration   PreRegistration @relation(fields: [preRegistrationId], references: [id])
+  preRegistrationId String
+  ListOfRequest     ListOfRequest[]
+
+  @@unique([preRegistrationId, studentId])
+}
+
+model ListOfRequest {
+  PreRegistrationData   PreRegistrationData @relation(fields: [preRegistrationDataId], references: [id])
+  preRegistrationDataId String
+  subject               Subject             @relation(fields: [subjectId], references: [id])
+  subjectId             String
+
+  @@unique([preRegistrationDataId, subjectId])
+}
+
+model Academic_Consultation {
+  id String @id @default(uuid())
+
+  student     Student @relation(fields: [student_nim], references: [nim])
+  student_nim String
+
+  receiver     Employee @relation(fields: [receiver_nik], references: [nik])
+  receiver_nik String
+
+  receiver_name        String             @db.VarChar(255)
+  topic                String             @db.VarChar(50)
+  student_name         String             @db.VarChar(255)
+  supervisor_name      String             @db.VarChar(255)
+  student_major        String             @db.VarChar(50)
+  student_arrival_year String             @db.VarChar(50)
+  createdAt            DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime           @default(now()) @db.Timestamptz(3)
+  status               ConsultationStatus @default(Waiting)
+  description          String
+
+  messages Message[]
+}
+
+model Message {
+  id String @id @default(uuid())
+
+  academic_consultation    Academic_Consultation @relation(fields: [academic_consultation_id], references: [id])
+  academic_consultation_id String
+
+  sender_name String   @db.VarChar(255)
+  content     String
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+}
+
+model Certificate {
+  id              String    @id @default(uuid())
+  filename        String
+  path            String
+  title           String
+  category        String
+  description     String
+  comments        String?
+  approvalDate    DateTime? @db.Timestamptz(3)
+  submitDate      DateTime  @default(now()) @db.Timestamptz(3)
+  approval_status status    @default(WAITING)
+  student         Student   @relation(fields: [studentNim], references: [nim])
+  studentNim      String
+}
+
+model Activity {
+  id             String           @id @default(uuid())
+  title          String
+  description    String
+  dueDate        DateTime
+  isAttendance   Boolean
+  activityType   ActivityType
+  Employee       Employee         @relation(fields: [employeeNik], references: [nik])
+  employeeNik    String
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  ActivityMember ActivityMember[]
+}
+
+model ActivityMember {
+  presence   Boolean?
+  activity   Activity @relation(fields: [activityId], references: [id])
+  activityId String
+  student    Student  @relation(fields: [studentNim], references: [nim])
+  studentNim String
+
+  @@unique([activityId, studentNim])
+}
+
+model GuidanceClass {
+  id                  String                @id @default(uuid())
+  teacher             Employee              @relation(fields: [teacherId], references: [nik])
+  teacherId           String                @unique
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  GuidanceClassMember GuidanceClassMember[]
+}
+
+model GuidanceClassMember {
+  student         Student       @relation(fields: [studentNim], references: [nim])
+  studentNim      String        @unique
+  gudianceClass   GuidanceClass @relation(fields: [guidanceClassId], references: [id], onDelete: Cascade)
+  guidanceClassId String
+
+  @@unique([studentNim, guidanceClassId])
+}
+
+// =================== OBE START ===================
 
 model Cpl {
   id           String         @id @default(uuid())
@@ -894,175 +1057,6 @@ model ReportDetail {
 }
 
 // =================== OBE END ===================
-
-model transaction_Grades {
-  id           String    @id @default(uuid())
-  submitedDate DateTime  @default(now()) @db.Timestamptz(3)
-  approveDate  DateTime? @db.Timestamptz(3)
-  semester     String
-  comments     String?
-  status       status    @default(WAITING)
-  Student      Student?  @relation(fields: [student_Nim], references: [nim])
-  student_Nim  String
-  Grades       Grades[]
-}
-
-model Grades {
-  id                 String              @id @default(uuid())
-  grades             String?
-  lecturer           String
-  description        String?
-  submited_Date      DateTime            @default(now())
-  Subject            Subject?            @relation(fields: [subjectId], references: [id])
-  subjectId          String?
-  subjectName        String?
-  transaction_Grades transaction_Grades? @relation(fields: [transactionId], references: [id])
-  transactionId      String?
-}
-
-model grades_access {
-  id              String    @id @default(uuid())
-  semester        String?
-  semester_period String?
-  major           Major
-  due_date        DateTime
-  createdAt       DateTime  @default(now())
-  isOpen          Boolean   @default(true)
-  Employee        Employee? @relation(fields: [employeeNik], references: [nik])
-  employeeNik     String?
-}
-
-model PreRegistration {
-  id                  String                @id @default(uuid())
-  semester            Semester
-  semesterPeriod      String
-  major               Major
-  dueDate             DateTime
-  isOpen              Boolean               @default(true)
-  Employee            Employee              @relation(fields: [employeeNik], references: [nik])
-  employeeNik         String
-  createdAt           DateTime              @default(now())
-  updatedAt           DateTime              @updatedAt
-  PreRegistrationData PreRegistrationData[]
-}
-
-model PreRegistrationData {
-  id                String          @id @default(uuid())
-  Student           Student         @relation(fields: [studentId], references: [nim])
-  studentId         String
-  Employee          Employee        @relation(fields: [employeeId], references: [nik])
-  employeeId        String
-  status            status?         @default(WAITING)
-  description       String?
-  comments          String?
-  submitDate        DateTime        @default(now())
-  approveDate       DateTime?
-  PreRegistration   PreRegistration @relation(fields: [preRegistrationId], references: [id])
-  preRegistrationId String
-  ListOfRequest     ListOfRequest[]
-
-  @@unique([preRegistrationId, studentId])
-}
-
-model ListOfRequest {
-  PreRegistrationData   PreRegistrationData @relation(fields: [preRegistrationDataId], references: [id])
-  preRegistrationDataId String
-  subject               Subject             @relation(fields: [subjectId], references: [id])
-  subjectId             String
-
-  @@unique([preRegistrationDataId, subjectId])
-}
-
-model Academic_Consultation {
-  id String @id @default(uuid())
-
-  student     Student @relation(fields: [student_nim], references: [nim])
-  student_nim String
-
-  receiver     Employee @relation(fields: [receiver_nik], references: [nik])
-  receiver_nik String
-
-  receiver_name        String             @db.VarChar(255)
-  topic                String             @db.VarChar(50)
-  student_name         String             @db.VarChar(255)
-  supervisor_name      String             @db.VarChar(255)
-  student_major        String             @db.VarChar(50)
-  student_arrival_year String             @db.VarChar(50)
-  createdAt            DateTime           @default(now()) @db.Timestamptz(3)
-  updatedAt            DateTime           @default(now()) @db.Timestamptz(3)
-  status               ConsultationStatus @default(Waiting)
-  description          String
-
-  messages Message[]
-}
-
-model Message {
-  id String @id @default(uuid())
-
-  academic_consultation    Academic_Consultation @relation(fields: [academic_consultation_id], references: [id])
-  academic_consultation_id String
-
-  sender_name String   @db.VarChar(255)
-  content     String
-  createdAt   DateTime @default(now()) @db.Timestamptz(3)
-}
-
-model Certificate {
-  id              String    @id @default(uuid())
-  filename        String
-  path            String
-  title           String
-  category        String
-  description     String
-  comments        String?
-  approvalDate    DateTime? @db.Timestamptz(3)
-  submitDate      DateTime  @default(now()) @db.Timestamptz(3)
-  approval_status status    @default(WAITING)
-  student         Student   @relation(fields: [studentNim], references: [nim])
-  studentNim      String
-}
-
-model Activity {
-  id             String           @id @default(uuid())
-  title          String
-  description    String
-  dueDate        DateTime
-  isAttendance   Boolean
-  activityType   ActivityType
-  Employee       Employee         @relation(fields: [employeeNik], references: [nik])
-  employeeNik    String
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  ActivityMember ActivityMember[]
-}
-
-model ActivityMember {
-  presence   Boolean?
-  activity   Activity @relation(fields: [activityId], references: [id])
-  activityId String
-  student    Student  @relation(fields: [studentNim], references: [nim])
-  studentNim String
-
-  @@unique([activityId, studentNim])
-}
-
-model GuidanceClass {
-  id                  String                @id @default(uuid())
-  teacher             Employee              @relation(fields: [teacherId], references: [nik])
-  teacherId           String                @unique
-  createdAt           DateTime              @default(now())
-  updatedAt           DateTime              @updatedAt
-  GuidanceClassMember GuidanceClassMember[]
-}
-
-model GuidanceClassMember {
-  student         Student       @relation(fields: [studentNim], references: [nim])
-  studentNim      String        @unique
-  gudianceClass   GuidanceClass @relation(fields: [guidanceClassId], references: [id], onDelete: Cascade)
-  guidanceClassId String
-
-  @@unique([studentNim, guidanceClassId])
-}
 
 enum Major {
   SI
