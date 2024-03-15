@@ -1,6 +1,7 @@
 import express, { Application, Router } from "express";
 import http from "http";
 import Config from "./config/config";
+import cors from "cors";
 
 //Router List
 import RouterPing from "./routes/ping";
@@ -16,6 +17,11 @@ const httpServer = http.createServer(app);
 const RouterApi = Router();
 
 app.use(express.json());
+app.use(
+  cors({
+    origin: ["http://localhost:3000"],
+  })
+);
 
 app.use("/api", RouterApi);
 (async () => {
