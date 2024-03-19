@@ -2,6 +2,7 @@ import express, { Application, Router } from "express";
 import http from "http";
 import Config from "./config/config";
 import cors from "cors";
+import morgan from "morgan";
 
 //Router List
 import RouterPing from "./routes/ping";
@@ -17,6 +18,7 @@ const httpServer = http.createServer(app);
 const RouterApi = Router();
 
 app.use(express.json());
+app.use(morgan("tiny"));
 app.use(
   cors({
     origin: ["http://localhost:3000"],
