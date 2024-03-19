@@ -191,6 +191,7 @@ RouterCurriculum.post(
         });
       }
 
+      console.log(error);
       res.status(500).json({
         status: false,
         message: "Internal server error",
@@ -258,6 +259,7 @@ RouterCurriculum.get("/:id", async (req, res) => {
         id: true,
         major: true,
         year: true,
+        Cpl: true,
         Curriculum_Subject: {
           select: {
             subject: {

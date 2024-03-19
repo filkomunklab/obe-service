@@ -6,7 +6,7 @@ import { mappingCplSchema } from "../schemas";
 
 const RouterSubject = express.Router();
 
-RouterSubject.post(
+RouterSubject.put(
   "/:id/cpl-mapping",
   validateSchema(mappingCplSchema),
   async (req, res) => {
@@ -22,9 +22,29 @@ RouterSubject.post(
       });
 
       const data = await prisma.$transaction(async (prisma) => {
+        const deletedCpl = await prisma.subject_Cpl.findMany({
+          where: {
+            cplId: {
+              notIn: cplIds,
+            },
+          },
+        });
+
         await prisma.subject_Cpl.createMany({
           data: payload,
+          skipDuplicates: true,
         });
+
+        if (deletedCpl.length > 0) {
+          await prisma.subject_Cpl.deleteMany({
+            where: {
+              cplId: {
+                in: deletedCpl.map((cpl) => cpl.cplId),
+              },
+              subjectId: id,
+            },
+          });
+        }
 
         return await prisma.subject.findUnique({
           where: {
@@ -88,6 +108,7 @@ RouterSubject.get("/:id/cpl-mapping", async (req, res) => {
             cpl: {
               select: {
                 code: true,
+                id: true,
               },
             },
           },
