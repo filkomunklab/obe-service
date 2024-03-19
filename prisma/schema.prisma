@@ -23,7 +23,7 @@ model Admin {
 model Employee {
   id                         String                       @id @default(uuid())
   nik                        String                       @unique
-  password                   String
+  password                   String                       @default("$2b$10$8i4.tmBGcK619R.lL6goi.GBRA3E7y25fARKYRqIPR46PjwlPV9eu")
   firstName                  String
   lastName                   String
   email                      String                       @unique
@@ -766,7 +766,7 @@ model Rps {
   ReportDetail          ReportDetail?
   ReportSummary         ReportSummary?
   Subject               Subject                 @relation(fields: [subjectId], references: [id])
-  teacher               Employee                @relation(fields: [teacherId], references: [nik])
+  teacher               Employee                @relation(fields: [teacherId], references: [id])
   StudentAssignmentPlan StudentAssignmentPlan[]
 }
 
