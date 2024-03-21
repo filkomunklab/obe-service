@@ -148,7 +148,7 @@ RouterReportSummary.put("/:rpsId", async (req, res) => {
       };
     };
 
-    const normalize: ReportSummary = {
+    const normalize: Omit<ReportSummary, "createAt" | "updateAt"> = {
       rpsId: rps.id,
       credits: rps.Subject.credits,
       parallel: rps.parallel,

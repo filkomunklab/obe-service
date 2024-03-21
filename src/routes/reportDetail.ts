@@ -55,7 +55,7 @@ RouterReportDetail.put("/:rpsId", async (req, res) => {
     const students = await prisma.student.findMany({
       where: {
         ClassStudent: {
-          every: {
+          some: {
             rpsId,
           },
         },
@@ -69,10 +69,12 @@ RouterReportDetail.put("/:rpsId", async (req, res) => {
       },
     });
 
-    if (!students) {
+    console.log(students);
+
+    if (students.length === 0) {
       return res.status(404).json({
         status: false,
-        message: "Students not found",
+        message: "Students not found. Add students to the class first.",
       });
     }
 
@@ -104,7 +106,7 @@ RouterReportDetail.put("/:rpsId", async (req, res) => {
       };
     });
 
-    const normalize: ReportDetail = {
+    const normalize: Omit<ReportDetail, "createAt"> = {
       rpsId: rps.id,
       subjectName: `${rps.Subject.englishName} / ${rps.Subject.indonesiaName}`,
       major: rps.Subject.Curriculum_Subject.map(
@@ -116,6 +118,7 @@ RouterReportDetail.put("/:rpsId", async (req, res) => {
       schedule: rps.schedule,
       gradingSystem: {},
       studentGrade: groupGradingSystem,
+      updateAt: new Date(),
     };
 
     const result = await prisma.reportDetail.upsert({
@@ -132,6 +135,7 @@ RouterReportDetail.put("/:rpsId", async (req, res) => {
       data: result,
     });
   } catch (error) {
+    console.log(error);
     return res.status(500).json({
       status: false,
       message: "Internal server error",

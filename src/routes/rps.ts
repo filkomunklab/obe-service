@@ -6,9 +6,173 @@ import prisma from "../database";
 import { extractXlsx } from "../utils";
 import multer from "multer";
 import { ClassStudent } from "@prisma/client";
+import classMemberSchema from "../schemas/classMemberSchema";
 
 const upload = multer();
 const RouterRps = express.Router();
+
+// RouterRps.get("/summary", async (req, res) => {
+//   try {
+//     const data = await prisma.majorGlobal.findMany({
+//       select: {
+//         _count: {
+//           select: {
+//             Employee: true,
+//           },
+//         },
+//         Curriculum: {
+//           select: {
+//             headOfProgramStudy: {
+//               select: {
+//                 firstName: true,
+//                 lastName: true,
+//               },
+//             },
+//             Curriculum_Subject: {
+//               select: {
+//                 subject: {
+//                   select: {
+//                     _count: {
+//                       select: {
+//                         Rps: true,
+//                       },
+//                     },
+//                   },
+//                 },
+//               },
+//             },
+//           },
+//         },
+//       },
+//     });
+
+//     res.json({
+//       status: true,
+//       message: "Success",
+//       data,
+//     });
+//   } catch (error) {
+//     console.log(error);
+//     res.status(500).json({
+//       status: false,
+//       message: "Internal Server Error",
+//       error,
+//     });
+//   }
+// });
+
+RouterRps.get("/list/:major", async (req, res) => {
+  const { teacherId } = req.query;
+  const { major } = req.params;
+  try {
+    const data = await prisma.rps.findMany({
+      where: {
+        teacherId: teacherId as string,
+        Subject: {
+          Curriculum_Subject: { some: { curriculum: { major } } },
+        },
+      },
+      select: {
+        id: true,
+        Subject: {
+          select: {
+            code: true,
+            indonesiaName: true,
+            englishName: true,
+            Curriculum_Subject: {
+              select: {
+                curriculum: {
+                  select: {
+                    major: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        teacher: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
+        semester: true,
+        updatedAt: true,
+      },
+    });
+    res.json({
+      status: true,
+      message: "Success",
+      data,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      status: false,
+      message: "Internal Server Error",
+      error,
+    });
+  }
+});
+
+RouterRps.get("/list/teacher/:teacherId", async (req, res) => {
+  const { teacherId } = req.params;
+  try {
+    const rps = await prisma.rps.findMany({
+      where: {
+        teacherId: teacherId as string,
+      },
+      select: {
+        id: true,
+        Subject: {
+          select: {
+            code: true,
+            indonesiaName: true,
+            englishName: true,
+            Curriculum_Subject: {
+              select: {
+                curriculum: {
+                  select: {
+                    major: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        teacher: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
+        semester: true,
+        updatedAt: true,
+        _count: {
+          select: {
+            ClassStudent: true,
+          },
+        },
+      },
+    });
+    // const detail = {
+    //   teacher: rps[0]?.teacher,
+
+    // }
+    res.json({
+      status: true,
+      message: "Success",
+      data: rps,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      status: false,
+      message: "Internal Server Error",
+      error,
+    });
+  }
+});
 
 RouterRps.post("/", validateSchema(createRpsSchema), async (req, res) => {
   const body: CreateRps = req.body;
@@ -131,9 +295,10 @@ RouterRps.post(
       const parsedData: Pick<ClassStudent, "rpsId" | "studentNim">[] = data.map(
         (row: any) => ({
           rpsId: id,
-          studentNim: row.nim.toString(),
+          studentNim: row.nim?.toString(),
         })
       );
+      await classMemberSchema.validate(parsedData);
       const rps = await prisma.rps.findUnique({
         where: {
           id,
@@ -173,6 +338,14 @@ RouterRps.post(
         });
       }
 
+      if (error.name === "ValidationError") {
+        return res.status(400).json({
+          status: false,
+          message: "Validation error. Please provide correct data",
+          error: error.errors,
+        });
+      }
+      console.log(error);
       res.status(500).json({
         status: false,
         message: "Internal Server Error",

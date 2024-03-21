@@ -148,11 +148,11 @@ model UserRole {
 
 model Curriculum {
   id                   String               @id @default(uuid())
-  major                String               @db.VarChar(100)
   year                 String               @db.Char(4)
   headOfProgramStudyId String
   createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt
+  major                String               @db.VarChar(100)
   Cpl                  Cpl[]
   headOfProgramStudy   Employee             @relation(fields: [headOfProgramStudyId], references: [id])
   Curriculum_Subject   Curriculum_Subject[]
@@ -717,7 +717,7 @@ model GradingSystem {
 model StudentGrade {
   id              String        @id @default(uuid())
   rawGrade        Float
-  score           Float
+  score           Decimal       @db.Decimal(3, 2)
   calculateGrade  Float?
   studentNim      String
   gradingSystemId String
@@ -811,12 +811,12 @@ model StudentAssignmentPlan {
 }
 
 model ReportSummary {
-  rpsId            String @unique
+  rpsId            String   @unique
   subjectName      String
   curriculum       String
   major            String
   credits          Int
-  parallel         String @db.Char(1)
+  parallel         String   @db.Char(1)
   status           String
   semester         String
   teacher          String
@@ -825,20 +825,24 @@ model ReportSummary {
   lowestCpmk       Float
   cpmkGradeSummary Json
   studentCpmkGrade Json
-  Rps              Rps    @relation(fields: [rpsId], references: [id])
+  createAt         DateTime @default(now())
+  updateAt         DateTime
+  Rps              Rps      @relation(fields: [rpsId], references: [id])
 }
 
 model ReportDetail {
-  rpsId         String @unique
+  rpsId         String   @unique
   subjectName   String
   major         String
   credits       Int
-  parallel      String @db.Char(1)
+  parallel      String   @db.Char(1)
   teacher       String
   schedule      String
   gradingSystem Json
   studentGrade  Json
-  Rps           Rps    @relation(fields: [rpsId], references: [id])
+  createAt      DateTime @default(now())
+  updateAt      DateTime
+  Rps           Rps      @relation(fields: [rpsId], references: [id])
 }
 
 model AKAD_Academic_Consultation {
