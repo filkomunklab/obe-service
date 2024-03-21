@@ -298,6 +298,24 @@ RouterRps.post(
           studentNim: row.nim?.toString(),
         })
       );
+      const students = await prisma.student.findMany({
+        select: {
+          nim: true,
+        },
+      });
+      const unkownNim = parsedData
+        .map((item) => item.studentNim)
+        .filter((nim) => {
+          return !students.find((student) => student.nim === nim);
+        });
+      if (unkownNim.length > 0) {
+        return res.status(404).json({
+          status: false,
+          message: `These NIM didn't exist on database: ${unkownNim.join(
+            ", "
+          )}`,
+        });
+      }
       await classMemberSchema.validate(parsedData);
       const rps = await prisma.rps.findUnique({
         where: {
@@ -323,13 +341,6 @@ RouterRps.post(
         data: result,
       });
     } catch (error) {
-      if (error.code === "P2003") {
-        return res.status(404).json({
-          status: false,
-          message: "Student nim on the list not found",
-          error,
-        });
-      }
       if (error.code === "P2002") {
         return res.status(409).json({
           status: false,
