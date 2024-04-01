@@ -8,11 +8,9 @@
     "start": "npx nodemon",
     "dev": "npx nodemon --exec ts-node src/index.ts",
     "build": "tsc",
-    "db:migrate": "npx prisma migrate dev",
-    "db:reset": "npx prisma migrate reset",
     "db:pull": "npx prisma db pull",
-    "db:seed": "npx prisma db seed",
-    "db:generate": "npx prisma generate"
+    "db:generate": "npx prisma generate",
+    "db:pull:generate": "npx prisma db pull && npx prisma generate"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

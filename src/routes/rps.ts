@@ -11,65 +11,15 @@ import classMemberSchema from "../schemas/classMemberSchema";
 const upload = multer();
 const RouterRps = express.Router();
 
-// RouterRps.get("/summary", async (req, res) => {
-//   try {
-//     const data = await prisma.majorGlobal.findMany({
-//       select: {
-//         _count: {
-//           select: {
-//             Employee: true,
-//           },
-//         },
-//         Curriculum: {
-//           select: {
-//             headOfProgramStudy: {
-//               select: {
-//                 firstName: true,
-//                 lastName: true,
-//               },
-//             },
-//             Curriculum_Subject: {
-//               select: {
-//                 subject: {
-//                   select: {
-//                     _count: {
-//                       select: {
-//                         Rps: true,
-//                       },
-//                     },
-//                   },
-//                 },
-//               },
-//             },
-//           },
-//         },
-//       },
-//     });
-
-//     res.json({
-//       status: true,
-//       message: "Success",
-//       data,
-//     });
-//   } catch (error) {
-//     console.log(error);
-//     res.status(500).json({
-//       status: false,
-//       message: "Internal Server Error",
-//       error,
-//     });
-//   }
-// });
-
-RouterRps.get("/list/:major", async (req, res) => {
-  const { teacherId } = req.query;
-  const { major } = req.params;
+RouterRps.get("/list/all", async (req, res) => {
+  const { major } = req.query;
   try {
     const data = await prisma.rps.findMany({
       where: {
-        teacherId: teacherId as string,
         Subject: {
-          Curriculum_Subject: { some: { curriculum: { major } } },
+          Curriculum_Subject: {
+            some: { curriculum: { major: major as string } },
+          },
         },
       },
       select: {
@@ -96,8 +46,12 @@ RouterRps.get("/list/:major", async (req, res) => {
             lastName: true,
           },
         },
-        semester: true,
         updatedAt: true,
+        _count: {
+          select: {
+            ClassStudent: true,
+          },
+        },
       },
     });
     res.json({
@@ -146,7 +100,6 @@ RouterRps.get("/list/teacher/:teacherId", async (req, res) => {
             lastName: true,
           },
         },
-        semester: true,
         updatedAt: true,
         _count: {
           select: {
@@ -155,10 +108,6 @@ RouterRps.get("/list/teacher/:teacherId", async (req, res) => {
         },
       },
     });
-    // const detail = {
-    //   teacher: rps[0]?.teacher,
-
-    // }
     res.json({
       status: true,
       message: "Success",

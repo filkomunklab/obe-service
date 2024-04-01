@@ -19,6 +19,7 @@ const validateSchema =
           message: err.message,
         };
       });
+      console.log(errors);
       res.status(400).json({ status: false, message: "Bad Request", errors });
     }
   };

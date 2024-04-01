@@ -38,7 +38,6 @@ declare type CreateRps = {
   subjectFamily: string;
   subjectDescription: string;
   parallel: string;
-  semester: number;
   schedule: string;
   rpsDeveloper: string;
   headOfExpertise: string;

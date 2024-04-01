@@ -6,6 +6,105 @@ import { mappingCplSchema } from "../schemas";
 
 const RouterSubject = express.Router();
 
+RouterSubject.get("/", async (req, res) => {
+  try {
+    const data = await prisma.subject.findMany({
+      include: {
+        Subject_Cpl: true,
+      },
+    });
+    return res.json({
+      status: true,
+      message: "Data retrieved",
+      data,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      status: false,
+      message: "Internal server error",
+      error,
+    });
+  }
+});
+
+RouterSubject.get("/:id/cpl", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const data = await prisma.subject.findUnique({
+      where: {
+        id,
+      },
+      select: {
+        id: true,
+        Subject_Cpl: {
+          select: {
+            id: true,
+            cpl: true,
+          },
+        },
+      },
+    });
+    return res.json({
+      status: true,
+      message: "Data retrieved",
+      data,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      status: false,
+      message: "Internal server error",
+      error,
+    });
+  }
+});
+
+RouterSubject.get("/:id/prerequisite", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const data = await prisma.subject.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        Curriculum_Subject: {
+          select: {
+            curriculum: true,
+            prerequisite: true,
+          },
+        },
+      },
+    });
+    const Prerequisite = await Promise.all(
+      data?.Curriculum_Subject.map(async (item) => ({
+        curriculum: item.curriculum,
+        prerequisite: await prisma.subject.findMany({
+          where: {
+            code: {
+              in: item.prerequisite,
+            },
+          },
+        }),
+      }))
+    );
+    delete data.Curriculum_Subject;
+    const normalize = { ...data, Prerequisite };
+    res.json({
+      status: true,
+      message: "Data retrieved",
+      data: normalize,
+    });
+  } catch (error) {
+    console.log(error);
+    res.json({
+      status: false,
+      message: "Internal server error",
+      error,
+    });
+  }
+});
+
 RouterSubject.put(
   "/:id/cpl-mapping",
   validateSchema(mappingCplSchema),

@@ -19,7 +19,6 @@ const createRpsSchema = yup
       .length(1)
       .matches(/^[A-Za-z]$/, "Must be a single alphabetical character")
       .required(),
-    semester: yup.number().positive().required(),
     schedule: yup.string().required(),
     rpsDeveloper: yup.string().required(),
     headOfExpertise: yup.string().required(),
@@ -77,7 +76,7 @@ const createRpsSchema = yup
           .object()
           .shape({
             week: yup.string().required(),
-            cpmkList: yup.array().of(yup.string()).required(),
+            cpmkList: yup.string().required(),
             subCpmkDescription: yup.string().required(),
             achievementIndicators: yup.string().required(),
             assessmentModel: yup.string().required(),
@@ -95,7 +94,6 @@ const createRpsSchema = yup
         yup
           .object()
           .shape({
-            title: yup.string().required(),
             assignmentModel: yup.string().required(),
             references: yup.string().required(),
             subLearningOutcomes: yup.string().required(),
