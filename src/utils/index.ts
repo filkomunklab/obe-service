@@ -1,4 +1,5 @@
 import parsePrerequisites from "./parsePrerequisites";
 import extractXlsx from "./extractXlsx";
+import getToken from "./getToken";
 
-export { parsePrerequisites, extractXlsx };
+export { parsePrerequisites, extractXlsx, getToken };

@@ -6,6 +6,7 @@ import {
   MeetingPlan,
   StudentAssignmentPlan,
 } from "@prisma/client";
+import { Request } from "express";
 
 declare type CurriculumFile = {
   code: string;
@@ -64,3 +65,7 @@ declare type studentCpmkGradeType = {
   lastName: string;
   nim: string;
 };
+
+interface ExtendedRequest extends Request {
+  user: any; // Or a more specific type based on your user object
+}

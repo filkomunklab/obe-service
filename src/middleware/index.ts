@@ -1,2 +1,3 @@
 import validateSchema from "./validationMiddleware";
-export { validateSchema };
+import auth from "./authMiddleware";
+export { validateSchema, auth };

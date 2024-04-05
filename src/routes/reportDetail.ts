@@ -1,10 +1,11 @@
 import express, { Router } from "express";
 import prisma from "../database";
 import { ReportDetail } from "@prisma/client";
+import { auth } from "../middleware";
 
 const RouterReportDetail = express.Router();
 
-RouterReportDetail.put("/:rpsId", async (req, res) => {
+RouterReportDetail.put("/:rpsId", auth, async (req, res) => {
   const { rpsId } = req.params;
   try {
     const rps = await prisma.rps.findUnique({
@@ -144,7 +145,7 @@ RouterReportDetail.put("/:rpsId", async (req, res) => {
   }
 });
 
-RouterReportDetail.get("/:rpsId", async (req, res) => {
+RouterReportDetail.get("/:rpsId", auth, async (req, res) => {
   const { rpsId } = req.params;
   try {
     const data = await prisma.reportDetail.findUnique({

@@ -1,5 +1,5 @@
 import express from "express";
-import { validateSchema } from "../middleware";
+import { auth, validateSchema } from "../middleware";
 import { createRpsSchema, xlsxFileSchema } from "../schemas";
 import { CreateRps } from "../../global";
 import prisma from "../database";
@@ -11,7 +11,7 @@ import classMemberSchema from "../schemas/classMemberSchema";
 const upload = multer();
 const RouterRps = express.Router();
 
-RouterRps.get("/list/all", async (req, res) => {
+RouterRps.get("/list/all", auth, async (req, res) => {
   const { major } = req.query;
   try {
     const data = await prisma.rps.findMany({
@@ -69,7 +69,7 @@ RouterRps.get("/list/all", async (req, res) => {
   }
 });
 
-RouterRps.get("/list/teacher/:teacherId", async (req, res) => {
+RouterRps.get("/list/teacher/:teacherId", auth, async (req, res) => {
   const { teacherId } = req.params;
   try {
     const rps = await prisma.rps.findMany({
@@ -123,7 +123,7 @@ RouterRps.get("/list/teacher/:teacherId", async (req, res) => {
   }
 });
 
-RouterRps.post("/", validateSchema(createRpsSchema), async (req, res) => {
+RouterRps.post("/", auth, validateSchema(createRpsSchema), async (req, res) => {
   const body: CreateRps = req.body;
   try {
     const {
@@ -234,6 +234,7 @@ RouterRps.post("/", validateSchema(createRpsSchema), async (req, res) => {
 
 RouterRps.post(
   "/:id/member",
+  auth,
   upload.single("classMember"),
   validateSchema(xlsxFileSchema),
   async (req, res) => {

@@ -3,7 +3,7 @@ import prisma from "../database";
 import multer from "multer";
 import { extractXlsx, parsePrerequisites } from "../utils";
 import { Cpl, CurriculumFile } from "../../global";
-import { validateSchema } from "../middleware";
+import { auth, validateSchema } from "../middleware";
 import { xlsxFileSchema, createCurriculumSchema } from "../schemas";
 import cplSchema from "../schemas/cplSchema";
 import curriculumSchema from "../schemas/curriculumSchema";
@@ -16,6 +16,7 @@ const RouterCurriculum = express.Router();
 // post Curriculum
 RouterCurriculum.post(
   "/",
+  auth,
   upload.single("curriculumFile"),
   validateSchema(createCurriculumSchema),
   async (req, res) => {
@@ -134,6 +135,7 @@ RouterCurriculum.post(
 // post Curriculum Cpl
 RouterCurriculum.post(
   "/:id/cpl",
+  auth,
   upload.single("curriculumCpl"),
   validateSchema(xlsxFileSchema),
   async (req, res) => {
@@ -201,7 +203,7 @@ RouterCurriculum.post(
   }
 );
 
-RouterCurriculum.get("/", async (req, res) => {
+RouterCurriculum.get("/", auth, async (req, res) => {
   try {
     const { major } = req.query;
     const data = await prisma.curriculum.findMany({
@@ -248,7 +250,7 @@ RouterCurriculum.get("/", async (req, res) => {
   }
 });
 
-RouterCurriculum.get("/:id", async (req, res) => {
+RouterCurriculum.get("/:id", auth, async (req, res) => {
   try {
     const { id } = req.params;
     const data = await prisma.curriculum.findUnique({

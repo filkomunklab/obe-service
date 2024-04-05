@@ -2,10 +2,11 @@ import epxress from "express";
 import prisma from "../database";
 import { ReportSummary } from "@prisma/client";
 import { studentCpmkGradeType } from "../../global";
+import { auth } from "../middleware";
 
 const RouterReportSummary = epxress.Router();
 
-RouterReportSummary.put("/:rpsId", async (req, res) => {
+RouterReportSummary.put("/:rpsId", auth, async (req, res) => {
   const { rpsId } = req.params;
   try {
     const rps = await prisma.rps.findUnique({
@@ -148,7 +149,7 @@ RouterReportSummary.put("/:rpsId", async (req, res) => {
       };
     };
 
-    const normalize: Omit<ReportSummary, "createAt" | "updateAt"> = {
+    const normalize: Omit<ReportSummary, "createAt"> = {
       rpsId: rps.id,
       credits: rps.Subject.credits,
       parallel: rps.parallel,
@@ -173,6 +174,7 @@ RouterReportSummary.put("/:rpsId", async (req, res) => {
       lowestCpmk: Math.min(
         ...Object.values(cpmkGradeSummary(studentCpmkGrade).avgEach)
       ),
+      updateAt: new Date(),
     };
 
     const result = await prisma.reportSummary.upsert({
@@ -192,6 +194,36 @@ RouterReportSummary.put("/:rpsId", async (req, res) => {
     res.status(500).json({
       status: false,
       message: "Internal Server Error",
+      error,
+    });
+  }
+});
+
+RouterReportSummary.get("/:rpsId", auth, async (req, res) => {
+  const { rpsId } = req.params;
+  try {
+    const data = await prisma.reportSummary.findUnique({
+      where: {
+        rpsId,
+      },
+    });
+
+    if (!data) {
+      return res.status(404).json({
+        status: false,
+        message: "Data not found",
+      });
+    }
+
+    return res.json({
+      status: true,
+      message: "Data retrieved",
+      data,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: false,
+      message: "Internal server error",
       error,
     });
   }

@@ -1,6 +1,6 @@
 import express from "express";
 import multer from "multer";
-import { validateSchema } from "../middleware";
+import { auth, validateSchema } from "../middleware";
 import { xlsxFileSchema } from "../schemas";
 import { extractXlsx } from "../utils";
 import { StudentGrade } from "@prisma/client";
@@ -11,6 +11,7 @@ const RouterStudentGrade = express.Router();
 
 RouterStudentGrade.put(
   "/:gradingSystemId",
+  auth,
   upload.single("grade"),
   validateSchema(xlsxFileSchema),
   async (req, res) => {

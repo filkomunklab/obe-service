@@ -1,12 +1,12 @@
 import express from "express";
 import prisma from "../database";
 import { Subject_Cpl } from "../../global";
-import { validateSchema } from "../middleware";
+import { auth, validateSchema } from "../middleware";
 import { mappingCplSchema } from "../schemas";
 
 const RouterSubject = express.Router();
 
-RouterSubject.get("/", async (req, res) => {
+RouterSubject.get("/", auth, async (req, res) => {
   try {
     const data = await prisma.subject.findMany({
       include: {
@@ -28,7 +28,7 @@ RouterSubject.get("/", async (req, res) => {
   }
 });
 
-RouterSubject.get("/:id/cpl", async (req, res) => {
+RouterSubject.get("/:id/cpl", auth, async (req, res) => {
   const { id } = req.params;
   try {
     const data = await prisma.subject.findUnique({
@@ -60,7 +60,7 @@ RouterSubject.get("/:id/cpl", async (req, res) => {
   }
 });
 
-RouterSubject.get("/:id/prerequisite", async (req, res) => {
+RouterSubject.get("/:id/prerequisite", auth, async (req, res) => {
   const { id } = req.params;
   try {
     const data = await prisma.subject.findUnique({
@@ -107,6 +107,7 @@ RouterSubject.get("/:id/prerequisite", async (req, res) => {
 
 RouterSubject.put(
   "/:id/cpl-mapping",
+  auth,
   validateSchema(mappingCplSchema),
   async (req, res) => {
     try {
@@ -190,7 +191,7 @@ RouterSubject.put(
   }
 );
 
-RouterSubject.get("/:id/cpl-mapping", async (req, res) => {
+RouterSubject.get("/:id/cpl-mapping", auth, async (req, res) => {
   try {
     const { id } = req.params;
     const data = await prisma.subject.findUnique({
