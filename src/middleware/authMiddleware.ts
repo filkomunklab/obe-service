@@ -36,8 +36,6 @@ export default async function auth(
       },
     });
 
-    console.log(req.user);
-
     if (isAdmin || isEmployee || isStudent) {
       // The token belongs to an admin, employee, or student
       next();

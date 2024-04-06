@@ -31,6 +31,7 @@ RouterRps.get("/list/all", auth, async (req, res) => {
             englishName: true,
             Curriculum_Subject: {
               select: {
+                semester: true,
                 curriculum: {
                   select: {
                     major: true,
@@ -78,13 +79,16 @@ RouterRps.get("/list/teacher/:teacherId", auth, async (req, res) => {
       },
       select: {
         id: true,
+        status: true,
         Subject: {
           select: {
             code: true,
             indonesiaName: true,
             englishName: true,
+            credits: true,
             Curriculum_Subject: {
               select: {
+                semester: true,
                 curriculum: {
                   select: {
                     major: true,
@@ -108,10 +112,20 @@ RouterRps.get("/list/teacher/:teacherId", auth, async (req, res) => {
         },
       },
     });
+    const metadata = {
+      teacher: rps[0]?.teacher,
+      creditsTotal: rps.reduce((acc: any, curr) => {
+        return acc + curr.Subject.credits;
+      }, 0),
+      studentsTotal: rps.reduce((acc: any, curr) => {
+        return acc + curr._count.ClassStudent;
+      }, 0),
+      rpsTotal: rps.length,
+    };
     res.json({
       status: true,
       message: "Success",
-      data: rps,
+      data: { rps, metadata },
     });
   } catch (error) {
     console.log(error);
