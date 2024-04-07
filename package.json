@@ -8,6 +8,7 @@
     "start": "npx nodemon",
     "dev": "npx nodemon --exec ts-node src/index.ts",
     "build": "tsc",
+    "db:seed": "ts-node prisma/seed.ts",
     "db:pull": "npx prisma db pull",
     "db:generate": "npx prisma generate",
     "db:pull:generate": "npx prisma db pull && npx prisma generate"

@@ -9,6 +9,7 @@ const RouterReportSummary = epxress.Router();
 RouterReportSummary.put("/:rpsId", async (req, res) => {
   const { rpsId } = req.params;
   try {
+    const assessmentIndicator = await prisma.assessmentIndicator.findMany();
     const rps = await prisma.rps.findUnique({
       where: {
         id: rpsId,
@@ -176,6 +177,12 @@ RouterReportSummary.put("/:rpsId", async (req, res) => {
       }
       return min;
     }, cpmkGradeSummary.avgEach[0]);
+    const status = assessmentIndicator.find((item) => {
+      return (
+        cpmkGradeSummary.overallAvg >= Math.floor(item.minScore) &&
+        cpmkGradeSummary.overallAvg <= Math.floor(item.maxScore)
+      );
+    })?.description;
 
     const normalize = {
       rpsId: rps.id,
@@ -190,7 +197,7 @@ RouterReportSummary.put("/:rpsId", async (req, res) => {
       semester: rps.Subject.Curriculum_Subject.map(
         (item) => item.semester
       ).join(" | "),
-      status: "NEED TO BE IMPLEMENTED LATER",
+      status,
       curriculum: rps.Subject.Curriculum_Subject.map(
         (item) => item.curriculum.year
       ).join(" | "),
