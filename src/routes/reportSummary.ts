@@ -1,12 +1,12 @@
 import epxress from "express";
 import prisma from "../database";
-import { ReportSummary } from "@prisma/client";
 import { studentCpmkGradeType } from "../../global";
 import { auth } from "../middleware";
+import { convertShortMajor } from "../utils";
 
 const RouterReportSummary = epxress.Router();
 
-RouterReportSummary.put("/:rpsId", auth, async (req, res) => {
+RouterReportSummary.put("/:rpsId", async (req, res) => {
   const { rpsId } = req.params;
   try {
     const rps = await prisma.rps.findUnique({
@@ -33,6 +33,14 @@ RouterReportSummary.put("/:rpsId", auth, async (req, res) => {
             lastName: true,
           },
         },
+        CpmkGrading: {
+          select: {
+            id: true,
+            code: true,
+            totalGradingWeight: true,
+            GradingSystem: true,
+          },
+        },
       },
     });
     if (!rps) {
@@ -45,7 +53,7 @@ RouterReportSummary.put("/:rpsId", auth, async (req, res) => {
     const students = await prisma.student.findMany({
       where: {
         ClassStudent: {
-          every: {
+          some: {
             rpsId,
           },
         },
@@ -78,86 +86,106 @@ RouterReportSummary.put("/:rpsId", auth, async (req, res) => {
     });
 
     const calculateGrade = (item: any) => {
-      const averageGrades = item.StudentGrade.reduce((acc, curr) => {
-        const code = curr.GradingSystem.CpmkGrading.code;
-        const score = curr.score;
-        const totalGradingWeight =
-          curr.GradingSystem.CpmkGrading.totalGradingWeight;
-
-        if (!acc[code]) {
-          acc[code] = { totalScore: 0, totalWeight: totalGradingWeight };
-        }
-        acc[code].totalScore += score;
-
+      const averagePerCpmk = rps.CpmkGrading.reduce((acc: any, curr) => {
+        const sumOfGrades = curr.GradingSystem.reduce((acc, curr) => {
+          const targetGrade = item.StudentGrade.find(
+            (item) => item.GradingSystem.id === curr.id
+          );
+          if (!targetGrade) return acc;
+          return acc + targetGrade.score;
+        }, 0);
+        const average = (sumOfGrades / curr.totalGradingWeight) * 100;
+        const result = { code: curr.code, id: curr.id, average };
+        acc.push(result);
         return acc;
-      }, {});
-
-      for (const code in averageGrades) {
-        const totalScore = averageGrades[code].totalScore;
-        const totalWeight = averageGrades[code].totalWeight;
-        averageGrades[code] = (totalScore / totalWeight) * 100;
-      }
-
-      return averageGrades;
-    };
-
-    const calculateAverage = (averageGrades) => {
-      let totalAverage = 0;
-      for (const code in averageGrades) {
-        totalAverage += averageGrades[code];
-      }
-
-      return totalAverage / Object.keys(averageGrades).length;
+      }, []);
+      const overallAvg = averagePerCpmk.reduce((total, item, index, array) => {
+        total += item.average;
+        if (index === array.length - 1) {
+          total = total / array.length;
+        }
+        return total;
+      }, 0);
+      return { averagePerCpmk, overallAvg };
     };
 
     const studentCpmkGrade = students.map((item) => {
+      const calculatedGrade = calculateGrade(item);
       return {
         ...item,
-        StudentGrade: calculateGrade(item),
-        average: calculateAverage(calculateGrade(item)),
+        maxGrade: calculatedGrade.averagePerCpmk.reduce((max, item) => {
+          if (item.average > max.average) {
+            return item;
+          }
+          return max;
+        }, calculatedGrade.averagePerCpmk[0]),
+        minGrade: calculatedGrade.averagePerCpmk.reduce((min, item) => {
+          if (item.average < min.average) {
+            return item;
+          }
+          return min;
+        }, calculatedGrade.averagePerCpmk[0]),
+        StudentGrade: calculatedGrade.averagePerCpmk,
+        average: calculatedGrade.overallAvg,
       };
     });
 
-    const cpmkGradeSummary = (data: studentCpmkGradeType[]) => {
-      const totalSum = {};
-      const totalCount = {};
-      data.forEach((student) => {
-        for (const code in student.StudentGrade) {
-          totalSum[code] = (totalSum[code] || 0) + student.StudentGrade[code];
-          totalCount[code] = (totalCount[code] || 0) + 1;
+    const calculateCpmkGradeSummary = (data: studentCpmkGradeType[]) => {
+      const desctructering = data.map((item) => item.StudentGrade);
+      const flatted = desctructering.flat();
+
+      const totalAverage = flatted.reduce((accumulator, current) => {
+        if (!accumulator[current.code]) {
+          accumulator[current.code] = {
+            code: current.code,
+            sum: 0,
+            count: 0,
+            id: current.id,
+          };
         }
-      });
+        accumulator[current.code].sum += current.average;
+        accumulator[current.code].count++;
+        return accumulator;
+      }, {});
 
-      // Calculate total average for each code
-      const avgEach: { [key: string]: number } = {};
-      for (const code in totalSum) {
-        avgEach[code] = totalSum[code] / totalCount[code];
-      }
-
-      // Calculate overall average
-      let overallTotal = 0;
-      let overallCount = 0;
-      for (const code in totalSum) {
-        overallTotal += totalSum[code];
-        overallCount += totalCount[code];
-      }
-      const overallAvg = overallTotal / overallCount;
-
-      return {
-        avgEach,
-        overallAvg,
-      };
+      const avgEach = Object.values(totalAverage).map(
+        (item: { [code: string]: number }) => ({
+          id: item.id,
+          code: item.code,
+          average: item.sum / item.count,
+        })
+      );
+      const overallAvg = avgEach.reduce((acc, curr, index, array) => {
+        acc += curr.average;
+        if (index === array.length - 1) acc /= array.length;
+        return acc;
+      }, 0);
+      return { avgEach, overallAvg, maxItem, minItem };
     };
 
-    const normalize: Omit<ReportSummary, "createAt"> = {
+    const cpmkGradeSummary = calculateCpmkGradeSummary(studentCpmkGrade);
+    const maxItem = cpmkGradeSummary.avgEach.reduce((max, item) => {
+      if (item.average > max.average) {
+        return item;
+      }
+      return max;
+    }, cpmkGradeSummary.avgEach[0]);
+    const minItem = cpmkGradeSummary.avgEach.reduce((min, item) => {
+      if (item.average < min.average) {
+        return item;
+      }
+      return min;
+    }, cpmkGradeSummary.avgEach[0]);
+
+    const normalize = {
       rpsId: rps.id,
       credits: rps.Subject.credits,
       parallel: rps.parallel,
       schedule: rps.schedule,
       teacher: `${rps.teacher.firstName} ${rps.teacher.lastName}`,
       subjectName: `${rps.Subject.englishName} / ${rps.Subject.indonesiaName}`,
-      major: rps.Subject.Curriculum_Subject.map(
-        (item) => item.curriculum.major
+      major: rps.Subject.Curriculum_Subject.map((item) =>
+        convertShortMajor(item.curriculum.major)
       ).join(" | "),
       semester: rps.Subject.Curriculum_Subject.map(
         (item) => item.semester
@@ -167,13 +195,9 @@ RouterReportSummary.put("/:rpsId", auth, async (req, res) => {
         (item) => item.curriculum.year
       ).join(" | "),
       studentCpmkGrade,
-      cpmkGradeSummary: cpmkGradeSummary(studentCpmkGrade),
-      highestCpmk: Math.max(
-        ...Object.values(cpmkGradeSummary(studentCpmkGrade).avgEach)
-      ),
-      lowestCpmk: Math.min(
-        ...Object.values(cpmkGradeSummary(studentCpmkGrade).avgEach)
-      ),
+      cpmkGradeSummary,
+      highestCpmk: maxItem,
+      lowestCpmk: minItem,
       updateAt: new Date(),
     };
 

@@ -56,7 +56,7 @@ declare type CreateRps = {
   studentAssignmentPlan: Omit<StudentAssignmentPlan, "id" | "rpsId">[];
 };
 
-declare type StudentGrade = { [key: string]: number };
+declare type StudentGrade = { code: string; id: string; average: number };
 
 declare type studentCpmkGradeType = {
   StudentGrade: StudentGrade;
