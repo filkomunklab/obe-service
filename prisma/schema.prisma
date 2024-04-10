@@ -686,7 +686,7 @@ model Cpmk {
   description  String
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
-  rps          Rps            @relation(fields: [rpsId], references: [id])
+  rps          Rps            @relation(fields: [rpsId], references: [id], onDelete: Cascade)
   SupportedCpl SupportedCpl[]
 
   @@unique([rpsId, code])
@@ -697,7 +697,7 @@ model CpmkGrading {
   rpsId              String
   code               String
   totalGradingWeight Int
-  Rps                Rps             @relation(fields: [rpsId], references: [id])
+  Rps                Rps             @relation(fields: [rpsId], references: [id], onDelete: Cascade)
   GradingSystem      GradingSystem[]
 
   @@unique([rpsId, code])
@@ -710,7 +710,7 @@ model GradingSystem {
   gradingWeight Int
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
-  CpmkGrading   CpmkGrading    @relation(fields: [cpmkGradingId], references: [id])
+  CpmkGrading   CpmkGrading    @relation(fields: [cpmkGradingId], references: [id], onDelete: Cascade)
   StudentGrade  StudentGrade[]
 }
 
@@ -723,7 +723,7 @@ model StudentGrade {
   gradingSystemId String
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
-  GradingSystem   GradingSystem @relation(fields: [gradingSystemId], references: [id])
+  GradingSystem   GradingSystem @relation(fields: [gradingSystemId], references: [id], onDelete: Cascade)
   Student         Student       @relation(fields: [studentNim], references: [nim])
 
   @@unique([studentNim, gradingSystemId], name: "studentGradeId")
@@ -733,7 +733,7 @@ model SupportedCpl {
   cpmkId String
   cplId  String
   cpl    Cpl    @relation(fields: [cplId], references: [id])
-  cpmk   Cpmk   @relation(fields: [cpmkId], references: [id])
+  cpmk   Cpmk   @relation(fields: [cpmkId], references: [id], onDelete: Cascade)
 
   @@unique([cpmkId, cplId])
 }
@@ -775,16 +775,15 @@ model ClassStudent {
   id         String  @id @default(uuid())
   studentNim String
   rpsId      String
-  Rps        Rps     @relation(fields: [rpsId], references: [id])
+  Rps        Rps     @relation(fields: [rpsId], references: [id], onDelete: Cascade)
   Student    Student @relation(fields: [studentNim], references: [nim])
 
   @@unique([studentNim, rpsId])
 }
 
 model MeetingPlan {
-  id                    String @id @default(uuid())
+  id                    String   @id @default(uuid())
   week                  String
-  cpmkList              String
   subCpmkDescription    String
   achievementIndicators String
   assessmentModel       String
@@ -793,7 +792,8 @@ model MeetingPlan {
   offlineActivity       String
   onlineActivity        String
   rpsId                 String
-  rps                   Rps    @relation(fields: [rpsId], references: [id])
+  cpmkList              String[]
+  rps                   Rps      @relation(fields: [rpsId], references: [id], onDelete: Cascade)
 }
 
 model StudentAssignmentPlan {
@@ -807,7 +807,7 @@ model StudentAssignmentPlan {
   others                String
   referenceList         String
   rpsId                 String
-  rps                   Rps    @relation(fields: [rpsId], references: [id])
+  rps                   Rps    @relation(fields: [rpsId], references: [id], onDelete: Cascade)
 }
 
 model ReportSummary {
@@ -827,7 +827,7 @@ model ReportSummary {
   updateAt         DateTime
   highestCpmk      Json
   lowestCpmk       Json
-  Rps              Rps      @relation(fields: [rpsId], references: [id])
+  Rps              Rps      @relation(fields: [rpsId], references: [id], onDelete: Cascade)
 }
 
 model ReportDetail {
@@ -842,7 +842,7 @@ model ReportDetail {
   studentGrade  Json
   createAt      DateTime @default(now())
   updateAt      DateTime
-  Rps           Rps      @relation(fields: [rpsId], references: [id])
+  Rps           Rps      @relation(fields: [rpsId], references: [id], onDelete: Cascade)
 }
 
 model AKAD_Academic_Consultation {

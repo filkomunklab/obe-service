@@ -11,6 +11,121 @@ import classMemberSchema from "../schemas/classMemberSchema";
 const upload = multer();
 const RouterRps = express.Router();
 
+RouterRps.get("/:id", auth, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const data = await prisma.rps.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        teacher: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+        Subject: {
+          include: {
+            Subject_Cpl: {
+              include: {
+                cpl: true,
+              },
+            },
+            Curriculum_Subject: {
+              include: {
+                curriculum: true,
+              },
+            },
+          },
+        },
+        MeetingPlan: true,
+        StudentAssignmentPlan: true,
+        CpmkGrading: {
+          include: {
+            GradingSystem: true,
+          },
+        },
+        Cpmk: {
+          include: {
+            SupportedCpl: {
+              include: {
+                cpl: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const Prerequisite = await Promise.all(
+      data?.Subject.Curriculum_Subject.map(async (item) => ({
+        curriculum: item.curriculum,
+        prerequisite: await prisma.subject.findMany({
+          where: {
+            code: {
+              in: item.prerequisite,
+            },
+          },
+        }),
+      }))
+    );
+
+    res.json({
+      status: true,
+      message: "Success",
+      data: { ...data, Prerequisite },
+    });
+  } catch (error) {
+    if (error.code === "P2025") {
+      return res.status(404).json({
+        status: false,
+        message: "Rps not found",
+        error,
+      });
+    }
+
+    console.log(error);
+    res.status(500).json({
+      status: false,
+      message: "Internal Server Error",
+      error,
+    });
+  }
+});
+
+RouterRps.delete("/:id", auth, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const data = await prisma.rps.delete({
+      where: {
+        id,
+      },
+    });
+    res.json({
+      status: true,
+      message: "Success",
+      data,
+    });
+  } catch (error) {
+    if (error.code === "P2025") {
+      return res.status(404).json({
+        status: false,
+        message: "Rps not found",
+        error,
+      });
+    }
+
+    console.log(error);
+    res.status(500).json({
+      status: false,
+      message: "Internal Server Error",
+      error,
+    });
+  }
+});
+
 RouterRps.get("/list/all", auth, async (req, res) => {
   const { major } = req.query;
   try {
