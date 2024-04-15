@@ -217,6 +217,9 @@ RouterSubject.get("/:id/cpl-mapping", auth, async (req, res) => {
           select: {
             curriculum: {
               select: {
+                id: true,
+                major: true,
+                year: true,
                 Cpl: {
                   select: {
                     id: true,

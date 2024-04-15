@@ -5,8 +5,9 @@ import { CreateRps } from "../../global";
 import prisma from "../database";
 import { extractXlsx } from "../utils";
 import multer from "multer";
-import { ClassStudent } from "@prisma/client";
+import { ClassStudent, Major } from "@prisma/client";
 import classMemberSchema from "../schemas/classMemberSchema";
+import { count } from "console";
 
 const upload = multer();
 const RouterRps = express.Router();
@@ -126,19 +127,62 @@ RouterRps.delete("/:id", auth, async (req, res) => {
   }
 });
 
-RouterRps.get("/list/all", auth, async (req, res) => {
-  const { major } = req.query;
+RouterRps.patch("/:id", auth, async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  try {
+    const data = await prisma.rps.update({
+      where: {
+        id,
+      },
+      data: {
+        status,
+      },
+    });
+    res.json({
+      status: true,
+      message: "Success",
+      data,
+    });
+  } catch (error) {
+    if (error.code === "P2025") {
+      return res.status(404).json({
+        status: false,
+        message: "Rps not found",
+        error,
+      });
+    }
+
+    console.log(error);
+    res.status(500).json({
+      status: false,
+      message: "Internal Server Error",
+      error,
+    });
+  }
+});
+
+RouterRps.get("/list/all", async (req, res) => {
+  const { major, curriculumId } = req.query;
   try {
     const data = await prisma.rps.findMany({
       where: {
         Subject: {
           Curriculum_Subject: {
-            some: { curriculum: { major: major as string } },
+            some: {
+              curriculum: {
+                OR: [
+                  { major: major as string },
+                  { id: curriculumId as string },
+                ],
+              },
+            },
           },
         },
       },
       select: {
         id: true,
+        status: true,
         Subject: {
           select: {
             code: true,
@@ -174,6 +218,72 @@ RouterRps.get("/list/all", auth, async (req, res) => {
       status: true,
       message: "Success",
       data,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      status: false,
+      message: "Internal Server Error",
+      error,
+    });
+  }
+});
+
+RouterRps.get("/list/major-summary", async (req, res) => {
+  try {
+    const data = await prisma.curriculum.findMany({
+      select: {
+        major: true,
+        headOfProgramStudy: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
+        Curriculum_Subject: {
+          select: {
+            subject: {
+              select: {
+                Rps: {
+                  select: {
+                    teacherId: true,
+                  },
+                },
+                _count: {
+                  select: {
+                    Rps: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    const normalize = Object.keys(Major).map((key) => ({
+      major: key,
+      headOfProgramStudy: data.find((item) => item.major === key)
+        ?.headOfProgramStudy,
+      totalRps: data
+        .find((item) => item.major === key)
+        ?.Curriculum_Subject.reduce(
+          (acc, curr) => acc + curr.subject._count.Rps,
+          0
+        ),
+    }));
+
+    const filter = normalize.filter(
+      (item) => item.major !== "NONE" && item.major !== "DKV"
+    );
+
+    res.json({
+      status: true,
+      message: "Success",
+      data: filter,
     });
   } catch (error) {
     console.log(error);

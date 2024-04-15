@@ -12,6 +12,7 @@ import RouterRps from "./routes/rps";
 import RouterStudentGrade from "./routes/studentGrade";
 import RouterReportSummary from "./routes/reportSummary";
 import RouterReportDetail from "./routes/reportDetail";
+import path from "path";
 
 const app: Application = express();
 const httpServer = http.createServer(app);
@@ -19,6 +20,7 @@ const RouterApi = Router();
 
 app.use(express.json());
 app.use(morgan("tiny"));
+app.use("/static", express.static(path.join(__dirname, "../public")));
 app.use(
   cors({
     origin: ["http://localhost:3000"],
