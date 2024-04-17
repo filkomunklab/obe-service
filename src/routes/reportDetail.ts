@@ -118,7 +118,7 @@ RouterReportDetail.put("/:rpsId", auth, async (req, res) => {
       teacher: `${rps.teacher.firstName} ${rps.teacher.lastName}`,
       schedule: rps.schedule,
       gradingSystem: {},
-      studentGrade: groupGradingSystem,
+      studentGrade: JSON.stringify(groupGradingSystem),
       updateAt: new Date(),
     };
 
