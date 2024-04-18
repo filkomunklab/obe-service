@@ -148,11 +148,11 @@ model UserRole {
 
 model Curriculum {
   id                   String               @id @default(uuid())
+  major                String               @db.VarChar(100)
   year                 String               @db.Char(4)
   headOfProgramStudyId String
   createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt
-  major                String               @db.VarChar(100)
   Cpl                  Cpl[]
   headOfProgramStudy   Employee             @relation(fields: [headOfProgramStudyId], references: [id])
   Curriculum_Subject   Curriculum_Subject[]
@@ -717,7 +717,7 @@ model GradingSystem {
 model StudentGrade {
   id              String        @id @default(uuid())
   rawGrade        Float
-  score           Decimal       @db.Decimal(3, 2)
+  score           Float
   calculateGrade  Float?
   studentNim      String
   gradingSystemId String
@@ -756,9 +756,9 @@ model Rps {
   minPassGrade          String
   subjectId             String
   teacherId             String
+  status                status                  @default(WAITING)
   createdAt             DateTime                @default(now())
   updatedAt             DateTime                @updatedAt
-  status                status                  @default(WAITING)
   approvedAt            DateTime?
   ClassStudent          ClassStudent[]
   Cpmk                  Cpmk[]
@@ -784,6 +784,7 @@ model ClassStudent {
 model MeetingPlan {
   id                    String   @id @default(uuid())
   week                  String
+  cpmkList              String[]
   subCpmkDescription    String
   achievementIndicators String
   assessmentModel       String
@@ -792,7 +793,6 @@ model MeetingPlan {
   offlineActivity       String
   onlineActivity        String
   rpsId                 String
-  cpmkList              String[]
   rps                   Rps      @relation(fields: [rpsId], references: [id], onDelete: Cascade)
 }
 
@@ -821,12 +821,12 @@ model ReportSummary {
   semester         String
   teacher          String
   schedule         String
+  highestCpmk      Json
+  lowestCpmk       Json
   cpmkGradeSummary Json
   studentCpmkGrade Json
   createAt         DateTime @default(now())
   updateAt         DateTime
-  highestCpmk      Json
-  lowestCpmk       Json
   Rps              Rps      @relation(fields: [rpsId], references: [id], onDelete: Cascade)
 }
 
@@ -1031,8 +1031,8 @@ enum Major {
   SI
   IF
   DKV
-  NONE
   TI
+  NONE
 }
 
 enum StudentStatus {

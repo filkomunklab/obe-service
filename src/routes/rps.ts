@@ -337,6 +337,12 @@ RouterRps.get("/list/teacher/:teacherId", auth, async (req, res) => {
         },
       },
     });
+    if (rps.length === 0) {
+      return res.status(404).json({
+        status: false,
+        message: "Data not found",
+      });
+    }
     const metadata = {
       teacher: rps[0]?.teacher,
       creditsTotal: rps.reduce((acc: any, curr) => {

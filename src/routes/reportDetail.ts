@@ -152,6 +152,17 @@ RouterReportDetail.get("/:rpsId", auth, async (req, res) => {
       where: {
         rpsId,
       },
+      include: {
+        Rps: {
+          select: {
+            CpmkGrading: {
+              include: {
+                GradingSystem: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!data) {
