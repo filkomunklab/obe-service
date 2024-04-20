@@ -185,7 +185,7 @@ model Curriculum_Subject {
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
   prerequisite String[]
-  curriculum   Curriculum @relation(fields: [curriculumId], references: [id])
+  curriculum   Curriculum @relation(fields: [curriculumId], references: [id], onDelete: Cascade)
   subject      Subject    @relation(fields: [subjectId], references: [id])
 
   @@unique([curriculumId, subjectId])
@@ -660,7 +660,7 @@ model Cpl {
   curriculumId String
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
-  curriculum   Curriculum     @relation(fields: [curriculumId], references: [id])
+  curriculum   Curriculum     @relation(fields: [curriculumId], references: [id], onDelete: Cascade)
   Subject_Cpl  Subject_Cpl[]
   SupportedCpl SupportedCpl[]
 
@@ -673,7 +673,7 @@ model Subject_Cpl {
   cplId     String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  cpl       Cpl      @relation(fields: [cplId], references: [id])
+  cpl       Cpl      @relation(fields: [cplId], references: [id], onDelete: Cascade)
   subject   Subject  @relation(fields: [subjectId], references: [id])
 
   @@unique([subjectId, cplId])
@@ -732,7 +732,7 @@ model StudentGrade {
 model SupportedCpl {
   cpmkId String
   cplId  String
-  cpl    Cpl    @relation(fields: [cplId], references: [id])
+  cpl    Cpl    @relation(fields: [cplId], references: [id], onDelete: Cascade)
   cpmk   Cpmk   @relation(fields: [cpmkId], references: [id], onDelete: Cascade)
 
   @@unique([cpmkId, cplId])

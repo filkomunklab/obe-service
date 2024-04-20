@@ -308,4 +308,36 @@ RouterCurriculum.get("/:id", auth, async (req, res) => {
   }
 });
 
+RouterCurriculum.delete("/:id", auth, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const data = await prisma.curriculum.delete({
+      where: {
+        id,
+      },
+    });
+
+    res.json({
+      status: true,
+      message: "Data deleted",
+      data,
+    });
+  } catch (error) {
+    if (error.code === "P2025") {
+      return res.status(404).json({
+        status: false,
+        message: "Data not found",
+        error,
+      });
+    }
+
+    console.error(error);
+    res.status(500).json({
+      status: false,
+      message: "Internal server error",
+      error,
+    });
+  }
+});
+
 export default RouterCurriculum;
