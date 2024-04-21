@@ -27,6 +27,7 @@ app.use(
       "http://localhost:3000",
       "https://outcome-based.vercel.app",
       "https://filkom.investsulut.id",
+      "https://hgdxm2td-3000.asse.devtunnels.ms",
     ],
   })
 );
