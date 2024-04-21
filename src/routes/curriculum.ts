@@ -317,6 +317,18 @@ RouterCurriculum.delete("/:id", auth, async (req, res) => {
       },
     });
 
+    await prisma.rps.deleteMany({
+      where: {
+        Subject: {
+          Curriculum_Subject: {
+            some: {
+              curriculumId: id,
+            },
+          },
+        },
+      },
+    });
+
     res.json({
       status: true,
       message: "Data deleted",
