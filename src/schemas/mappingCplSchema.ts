@@ -1,11 +1,8 @@
-import * as yup from "yup";
+import { z } from "zod";
 
-const mappingCplSchema = yup
-  .object()
-  .shape({
-    id: yup.string().required(),
-    cplIds: yup.array().of(yup.string().required()).required(),
-  })
-  .noUnknown();
+const mappingCplSchema = z.object({
+  id: z.string(),
+  cplIds: z.array(z.string()),
+});
 
 export default mappingCplSchema;

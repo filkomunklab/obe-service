@@ -1,9 +1,9 @@
-import express, { Router } from "express";
+import { Hono } from "hono";
 
-const RouterPing = express.Router();
+const RouterPing = new Hono();
 
-RouterPing.get("/", async (req, res) => {
-  res.json({
+RouterPing.get("/", async (c) => {
+  c.json({
     status: true,
     message: "pong",
   });

@@ -6,7 +6,7 @@ import {
   MeetingPlan,
   StudentAssignmentPlan,
 } from "@prisma/client";
-import { Request } from "express";
+import { Context, HonoRequest } from "hono";
 
 declare type CurriculumFile = {
   code: string;
@@ -66,6 +66,7 @@ declare type studentCpmkGradeType = {
   nim: string;
 };
 
-interface ExtendedRequest extends Request {
-  user: any; // Or a more specific type based on your user object
+interface ExtendedContext extends Context {
+  // user?: any; // Or a more specific type based on your user object
+  req: HonoRequest & { user?: any };
 }
