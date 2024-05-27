@@ -8,7 +8,7 @@ import * as path from "path";
 //Router List
 import RouterPing from "./routes/ping";
 import RouterCurriculum from "./routes/curriculum";
-// import RouterSubject from "./routes/subject";
+import RouterSubject from "./routes/subject";
 // import RouterRps from "./routes/rps";
 // import RouterStudentGrade from "./routes/studentGrade";
 // import RouterReportSummary from "./routes/reportSummary";
@@ -32,7 +32,7 @@ app.use(
 
 app.route("/ping", RouterPing);
 app.route("/curriculum", RouterCurriculum);
-// app.route("/subject", RouterSubject);
+app.route("/subject", RouterSubject);
 // app.route("/rps", RouterRps);
 // app.route("/student-grade", RouterStudentGrade);
 // app.route("/report-summary", RouterReportSummary);

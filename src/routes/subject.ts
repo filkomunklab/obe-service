@@ -1,35 +1,48 @@
-import express from "express";
 import prisma from "../database";
 import { Subject_Cpl } from "../../global";
 import { auth, validateSchema } from "../middleware";
 import { mappingCplSchema } from "../schemas";
+import { Hono } from "hono";
+import { zValidator } from "@hono/zod-validator";
 
-const RouterSubject = express.Router();
+const RouterSubject = new Hono();
 
-RouterSubject.get("/", auth, async (req, res) => {
+RouterSubject.get("/", auth, async (c) => {
   try {
     const data = await prisma.subject.findMany({
       include: {
         Subject_Cpl: true,
       },
     });
-    return res.json({
+    if (data.length === 0) {
+      return c.json(
+        {
+          status: false,
+          message: "Data not found",
+        },
+        404
+      );
+    }
+    return c.json({
       status: true,
       message: "Data retrieved",
       data,
     });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({
-      status: false,
-      message: "Internal server error",
-      error,
-    });
+    return c.json(
+      {
+        status: false,
+        message: "Internal server error",
+        error,
+      },
+      500
+    );
   }
 });
 
-RouterSubject.get("/:id/cpl", auth, async (req, res) => {
-  const { id } = req.params;
+RouterSubject.get("/:id/cpl", auth, async (c) => {
+  const id = c.req.param("id");
   try {
     const data = await prisma.subject.findUnique({
       where: {
@@ -45,23 +58,36 @@ RouterSubject.get("/:id/cpl", auth, async (req, res) => {
         },
       },
     });
-    return res.json({
+
+    if (!data) {
+      return c.json(
+        {
+          status: false,
+          message: "Data not found",
+        },
+        404
+      );
+    }
+    return c.json({
       status: true,
       message: "Data retrieved",
       data,
     });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({
-      status: false,
-      message: "Internal server error",
-      error,
-    });
+    return c.json(
+      {
+        status: false,
+        message: "Internal server error",
+        error,
+      },
+      500
+    );
   }
 });
 
-RouterSubject.get("/:id/prerequisite", auth, async (req, res) => {
-  const { id } = req.params;
+RouterSubject.get("/:id/prerequisite", auth, async (c) => {
+  const id = c.req.param("id");
   try {
     const data = await prisma.subject.findUnique({
       where: {
@@ -76,6 +102,15 @@ RouterSubject.get("/:id/prerequisite", auth, async (req, res) => {
         },
       },
     });
+    if (!data) {
+      return c.json(
+        {
+          status: false,
+          message: "Data not found",
+        },
+        404
+      );
+    }
     const Prerequisite = await Promise.all(
       data?.Curriculum_Subject.map(async (item) => ({
         curriculum: item.curriculum,
@@ -88,31 +123,35 @@ RouterSubject.get("/:id/prerequisite", auth, async (req, res) => {
         }),
       }))
     );
-    delete data.Curriculum_Subject;
-    const normalize = { ...data, Prerequisite };
-    res.json({
+    const { Curriculum_Subject, ...withoutCurrSub } = data; // remove Curriculum_Subject from data
+
+    const normalize = { ...withoutCurrSub, Prerequisite };
+    return c.json({
       status: true,
       message: "Data retrieved",
       data: normalize,
     });
   } catch (error) {
     console.log(error);
-    res.json({
-      status: false,
-      message: "Internal server error",
-      error,
-    });
+    return c.json(
+      {
+        status: false,
+        message: "Internal server error",
+        error,
+      },
+      500
+    );
   }
 });
 
 RouterSubject.put(
   "/:id/cpl-mapping",
   auth,
-  validateSchema(mappingCplSchema),
-  async (req, res) => {
+  zValidator("json", mappingCplSchema),
+  async (c) => {
     try {
-      const { cplIds } = req.body;
-      const { id } = req.params;
+      const { cplIds } = c.req.valid("json");
+      const id = c.req.param("id");
 
       const payload: Subject_Cpl[] = cplIds.map((cplId: string) => {
         return {
@@ -160,40 +199,52 @@ RouterSubject.put(
         });
       });
 
-      res.status(201).json({
-        status: true,
-        message: "CPLs mapped to subject",
-        data,
-      });
-    } catch (error) {
+      return c.json(
+        {
+          status: true,
+          message: "CPLs mapped to subject",
+          data,
+        },
+        201
+      );
+    } catch (error: any) {
       if (error.code === "P2003") {
-        return res.status(404).json({
-          status: false,
-          message: "Subject or CPL not found",
-          error,
-        });
+        return c.json(
+          {
+            status: false,
+            message: "Subject or CPL not found",
+            error,
+          },
+          404
+        );
       }
 
       if (error.code === "P2002") {
-        return res.status(409).json({
-          status: false,
-          message: "CPL already mapped to subject",
-          error,
-        });
+        return c.json(
+          {
+            status: false,
+            message: "CPL already mapped to subject",
+            error,
+          },
+          409
+        );
       }
 
-      res.status(500).json({
-        status: false,
-        message: "Internal server error",
-        error,
-      });
+      return c.json(
+        {
+          status: false,
+          message: "Internal server error",
+          error,
+        },
+        500
+      );
     }
   }
 );
 
-RouterSubject.get("/:id/cpl-mapping", auth, async (req, res) => {
+RouterSubject.get("/:id/cpl-mapping", auth, async (c) => {
   try {
-    const { id } = req.params;
+    const id = c.req.param("id");
     const data = await prisma.subject.findUnique({
       where: {
         id,
@@ -235,24 +286,30 @@ RouterSubject.get("/:id/cpl-mapping", auth, async (req, res) => {
     });
 
     if (!data) {
-      return res.status(404).json({
-        status: false,
-        message: "Data not found",
-      });
+      return c.json(
+        {
+          status: false,
+          message: "Data not found",
+        },
+        404
+      );
     }
 
-    res.json({
+    return c.json({
       status: true,
       message: "Data retrieved",
       data,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({
-      status: false,
-      message: "Internal server error",
-      error,
-    });
+    return c.json(
+      {
+        status: false,
+        message: "Internal server error",
+        error,
+      },
+      500
+    );
   }
 });
 

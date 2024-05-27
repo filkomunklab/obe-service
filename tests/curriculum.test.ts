@@ -9,9 +9,10 @@ const token =
 beforeAll(async () => {
   try {
     await prisma.curriculum_Subject.deleteMany();
+    await prisma.subject_Cpl.deleteMany();
+    await prisma.cpl.deleteMany();
     await prisma.subject.deleteMany();
     await prisma.curriculum.deleteMany();
-    await prisma.cpl.deleteMany();
   } catch (error) {
     console.log(error);
   }
