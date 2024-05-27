@@ -5,6 +5,7 @@
   "dependencies": {
     "@hono/zod-validator": "^0.2.1",
     "@prisma/client": "^5.14.0",
+    "form-data-lite": "^1.0.3",
     "hono": "^4.3.8",
     "xlsx": "^0.18.5",
     "zod": "^3.23.8"

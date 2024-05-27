@@ -168,17 +168,27 @@ RouterCurriculum.post(
   zValidator("form", xlsxFileSchema),
   async (c) => {
     const id = c.req.param("id");
-    const { file } = c.req.valid("form");
+    const { curriculumCpl } = c.req.valid("form");
 
     try {
-      const data = await extractXlsx(file);
+      const data = await extractXlsx(curriculumCpl);
       const parsedData: Cpl[] = data.map((row: any) => ({
         code: row.code,
         description: row.description,
         curriculumId: id,
       }));
 
-      await cplSchema.spa(parsedData);
+      const validation = await cplSchema.spa(parsedData);
+      if (!validation.success) {
+        return c.json(
+          {
+            status: false,
+            message: "Please provide valid xlsx data",
+            error: validation.error,
+          },
+          400
+        );
+      }
 
       const result = await prisma.$transaction(async (prisma) => {
         await prisma.cpl.createMany({
@@ -191,7 +201,7 @@ RouterCurriculum.post(
         });
       });
 
-      c.json(
+      return c.json(
         {
           status: true,
           message: "Curriculum's CPLs created successuly",
@@ -222,7 +232,7 @@ RouterCurriculum.post(
         );
       }
 
-      if (error.name === "ValidationError") {
+      if (error.name === "ZodError") {
         return c.json(
           {
             status: false,
@@ -281,14 +291,14 @@ RouterCurriculum.get("/", auth, async (c) => {
       );
     }
 
-    c.json({
+    return c.json({
       status: true,
       message: "Data retrieved",
       data,
     });
   } catch (error) {
     console.error(error);
-    c.json(
+    return c.json(
       {
         status: false,
         message: "Internal server error",
@@ -345,14 +355,14 @@ RouterCurriculum.get("/:id", auth, async (c) => {
       );
     }
 
-    c.json({
+    return c.json({
       status: true,
       message: "Data retrieved",
       data,
     });
   } catch (error) {
     console.error(error);
-    c.json(
+    return c.json(
       {
         status: false,
         message: "Internal server error",
@@ -384,7 +394,7 @@ RouterCurriculum.delete("/:id", auth, async (c) => {
       },
     });
 
-    c.json({
+    return c.json({
       status: true,
       message: "Data deleted",
       data,

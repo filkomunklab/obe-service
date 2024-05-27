@@ -1,14 +1,7 @@
 import { Major } from "@prisma/client";
 import { z } from "zod";
 import oneOf from "../utils/oneOf";
-
-const checkFileFormat = (value: Blob) => {
-  const fileType = value.type;
-  return (
-    fileType ===
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-  );
-};
+import { checkFileFormat } from "../utils";
 
 const createCurriculumSchema = z.object({
   major: oneOf(Object.values(Major) as any),
