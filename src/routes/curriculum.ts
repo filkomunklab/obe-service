@@ -168,10 +168,10 @@ RouterCurriculum.post(
   zValidator("form", xlsxFileSchema),
   async (c) => {
     const id = c.req.param("id");
-    const { curriculumCpl } = c.req.valid("form");
+    const { file } = c.req.valid("form");
 
     try {
-      const data = await extractXlsx(curriculumCpl);
+      const data = await extractXlsx(file);
       const parsedData: Cpl[] = data.map((row: any) => ({
         code: row.code,
         description: row.description,

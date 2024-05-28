@@ -1,13 +1,5 @@
 import { z } from "zod";
 
-const calculateTotalGradingWeight = function (value: any) {
-  const gradingWeight = this.parent.gradingSystem.map(
-    (grading: any) => grading.gradingWeight
-  );
-  console.log(gradingWeight);
-  return gradingWeight.reduce((a: number, b: number) => a + b, 0) === value;
-};
-
 const createRpsSchema = z
   .object({
     teacherId: z.string(),
@@ -29,24 +21,40 @@ const createRpsSchema = z
         supportedCplIds: z.array(z.string()),
       })
     ),
-    cpmkGrading: z.array(
-      z.object({
-        code: z.string(),
-        // this total height must same with sum of gradingWeight
-        totalGradingWeight: z
-          .number()
-          .refine(
-            calculateTotalGradingWeight,
-            "Total weight must same with sum of gradingWeight "
-          ),
-        gradingSystem: z.array(
-          z.object({
-            gradingName: z.string(),
-            gradingWeight: z.number(),
+    cpmkGrading: z
+      .array(
+        z
+          .object({
+            code: z.string(),
+            totalGradingWeight: z.number(),
+            gradingSystem: z.array(
+              z.object({
+                gradingName: z.string(),
+                gradingWeight: z.number(),
+              })
+            ),
           })
-        ),
-      })
-    ),
+          .refine((value: any) => {
+            const total = value.gradingSystem.reduce(
+              (a: number, b: any) => a + b.gradingWeight,
+              0
+            );
+            if (total !== value.totalGradingWeight) {
+              return false;
+            }
+            return true;
+          }, "Total weight must be equal to grading weight")
+      )
+      .refine((value: any) => {
+        const total = value.reduce(
+          (a: number, b: any) => a + b.totalGradingWeight,
+          0
+        );
+        if (total !== 100) {
+          return false;
+        }
+        return true;
+      }, "Total weight must be 100"),
     mainReferences: z.array(z.string()),
     supportingReferences: z.array(z.string()),
     software: z.string(),

@@ -1,6 +1,7 @@
 import { describe, expect, it, beforeAll } from "bun:test";
 import app from "../src/app";
 import prisma from "../src/database";
+import { clearDatabase } from "./helpers";
 
 const token =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoiMDliOTFmZjQtMGY0My00ZjU0LWE2ODctZWIwZGRlZTA5YjA3IiwibmlrIjoiMTEwNjA2MDExNTUiLCJuYW1lIjoiQW5kcmV3IFRhbm55ICBMaWVtIiwicm9sZSI6WyJERUtBTiJdfSwiaWF0IjoxNzE2NjgyMjY3fQ.M5GIsprqN76szJueWQTluJakZpKOEhoEPU73rY3qjgc";
@@ -17,11 +18,7 @@ let cpl: {
 beforeAll(async () => {
   try {
     // Clear all data
-    await prisma.curriculum_Subject.deleteMany();
-    await prisma.subject_Cpl.deleteMany();
-    await prisma.cpl.deleteMany();
-    await prisma.subject.deleteMany();
-    await prisma.curriculum.deleteMany();
+    await clearDatabase();
 
     // Create new curriculum
     const path = "./tests/testFiles/Kurikulum FILKOM IF 2023 - example.xlsx";
@@ -48,7 +45,7 @@ beforeAll(async () => {
     const pathCpl = "./tests/testFiles/Curriculum Cpl IF - example.xlsx";
     const fileCpl = Bun.file(pathCpl);
     const formDataCpl = new FormData();
-    formDataCpl.append("curriculumCpl", fileCpl);
+    formDataCpl.append("file", fileCpl);
     await app.request(`/api/curriculum/${curriculumId}/cpl`, {
       body: formDataCpl,
       method: "POST",
@@ -221,7 +218,6 @@ describe("GET /api/subject/:id/cpl-mapping", () => {
       },
     });
     const data = await res.json();
-    console.log(data);
     expect(res.status).toBe(200);
     expect(data).toHaveProperty("data.id", expect.any(String));
   });

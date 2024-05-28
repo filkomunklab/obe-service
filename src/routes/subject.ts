@@ -1,6 +1,6 @@
 import prisma from "../database";
 import { Subject_Cpl } from "../../global";
-import { auth, validateSchema } from "../middleware";
+import { auth } from "../middleware";
 import { mappingCplSchema } from "../schemas";
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
@@ -152,6 +152,20 @@ RouterSubject.put(
     try {
       const { cplIds } = c.req.valid("json");
       const id = c.req.param("id");
+
+      const subject = await prisma.subject.findUnique({
+        where: { id },
+      });
+
+      if (!subject) {
+        return c.json(
+          {
+            status: false,
+            message: "Subject not found",
+          },
+          404
+        );
+      }
 
       const payload: Subject_Cpl[] = cplIds.map((cplId: string) => {
         return {

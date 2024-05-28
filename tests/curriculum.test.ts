@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from "bun:test";
 import app from "../src/app";
-import prisma from "../src/database";
+import { clearDatabase } from "./helpers";
 
 let curriculumId: string;
 const token =
@@ -8,11 +8,7 @@ const token =
 
 beforeAll(async () => {
   try {
-    await prisma.curriculum_Subject.deleteMany();
-    await prisma.subject_Cpl.deleteMany();
-    await prisma.cpl.deleteMany();
-    await prisma.subject.deleteMany();
-    await prisma.curriculum.deleteMany();
+    await clearDatabase();
   } catch (error) {
     console.log(error);
   }
@@ -244,7 +240,7 @@ describe("POST /api/curriculum/:id/cpl", () => {
 
   it("should return 201 when CPLs are created successfully", async () => {
     const formData = new FormData();
-    formData.append("curriculumCpl", file);
+    formData.append("file", file);
 
     const res = await app.request(`/api/curriculum/${curriculumId}/cpl`, {
       body: formData,
@@ -260,7 +256,7 @@ describe("POST /api/curriculum/:id/cpl", () => {
 
   it("should return 409 when the curriculum's CPLs already exist", async () => {
     const formData = new FormData();
-    formData.append("curriculumCpl", file);
+    formData.append("file", file);
 
     const res = await app.request(`/api/curriculum/${curriculumId}/cpl`, {
       body: formData,
