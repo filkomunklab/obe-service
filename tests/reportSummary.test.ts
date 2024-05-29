@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from "bun:test";
+import { describe, expect, it, beforeAll } from "bun:test";
 import { clearDatabase } from "./helpers";
 import app from "../src/app";
 import prisma from "../src/database";
@@ -320,19 +320,24 @@ beforeAll(async () => {
     const fileStudent = Bun.file(pathStudent);
     const formDataStudent = new FormData();
     formDataStudent.append("file", fileStudent);
-    const resStudent = await app.request(`/api/rps/${rpsId}/member`, {
+    await app.request(`/api/rps/${rpsId}/member`, {
       method: "POST",
       body: formDataStudent,
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
-    await resStudent.json();
 
-    // get all student in target rps
-    const students = await prisma.classStudent.findMany({
-      where: {
-        rpsId,
+    // submit student grade
+    const pathGrade = "./tests/testFiles/Insert Grade - example.xlsx";
+    const fileGrade = Bun.file(pathGrade);
+    const formDataGrade = new FormData();
+    formDataGrade.append("file", fileGrade);
+    await app.request(`/api/student-grade/${gradingSystemId}`, {
+      method: "PUT",
+      body: formDataGrade,
+      headers: {
+        Authorization: `Bearer ${token}`,
       },
     });
   } catch (error) {
@@ -340,58 +345,31 @@ beforeAll(async () => {
   }
 });
 
-describe("PUT /api/student-grade/:gradingSystemId", () => {
-  const path = "./tests/testFiles/Insert Grade - example.xlsx";
-  const file = Bun.file(path);
-  it("should return 404 when the grading system not found", async () => {
-    const formData = new FormData();
-    formData.append("file", file);
-    const res = await app.request(
-      `/api/student-grade/${gradingSystemId}-not-found`,
-      {
-        method: "PUT",
-        body: formData,
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+describe("PUT /api/report-summary/:rpsId", () => {
+  it("should return 404 if the target RPS not found", async () => {
+    const res = await app.request(`/api/report-summary/${rpsId}-not-found`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
     expect(res.status).toBe(404);
   });
-
-  const conditions = [
-    { file: Bun.file("./tests/testFiles/Curriculum Cpl IF - example.xlsx") },
-    { file: "" },
-    {},
-  ];
-  it.each(conditions)(
-    "should return 400 when the file is invalid",
-    async (data) => {
-      const formData = new FormData();
-      data.file && formData.append("file", data.file);
-      const res = await app.request(
-        `/api/student-grade/${gradingSystemId}-not-found`,
-        {
-          method: "PUT",
-          body: formData,
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      expect(res.status).toBe(400);
-    }
-  );
-
-  it("should return 404 when unkown student is on the list", async () => {
-    const path =
-      "./tests/testFiles/Insert Grade - example(unknown-student).xlsx";
-    const file = Bun.file(path);
-    const formData = new FormData();
-    formData.append("file", file);
-    const res = await app.request(`/api/student-grade/${gradingSystemId}`, {
+  it("should return 200", async () => {
+    const res = await app.request(`/api/report-summary/${rpsId}`, {
       method: "PUT",
-      body: formData,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    expect(res.status).toBe(200);
+  });
+});
+
+describe("GET /api/report-summary/:rpsId", () => {
+  it("should return 404 if the target RPS not found", async () => {
+    const res = await app.request(`/api/report-summary/${rpsId}-not-found`, {
+      method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -400,11 +378,8 @@ describe("PUT /api/student-grade/:gradingSystemId", () => {
   });
 
   it("should return 200", async () => {
-    const formData = new FormData();
-    formData.append("file", file);
-    const res = await app.request(`/api/student-grade/${gradingSystemId}`, {
-      method: "PUT",
-      body: formData,
+    const res = await app.request(`/api/report-summary/${rpsId}`, {
+      method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
       },

@@ -11,8 +11,8 @@ import RouterCurriculum from "./routes/curriculum";
 import RouterSubject from "./routes/subject";
 import RouterRps from "./routes/rps";
 import RouterStudentGrade from "./routes/studentGrade";
-// import RouterReportSummary from "./routes/reportSummary";
-// import RouterReportDetail from "./routes/reportDetail";
+import RouterReportDetail from "./routes/reportDetail";
+import RouterReportSummary from "./routes/reportSummary";
 
 const app = new Hono().basePath("/api");
 
@@ -35,7 +35,7 @@ app.route("/curriculum", RouterCurriculum);
 app.route("/subject", RouterSubject);
 app.route("/rps", RouterRps);
 app.route("/student-grade", RouterStudentGrade);
-// app.route("/report-summary", RouterReportSummary);
-// app.route("/report-detail", RouterReportDetail);
+app.route("/report-detail", RouterReportDetail);
+app.route("/report-summary", RouterReportSummary);
 
 export default app;

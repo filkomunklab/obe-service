@@ -26,7 +26,7 @@ model Employee {
   password                   String                       @default("$2b$10$8i4.tmBGcK619R.lL6goi.GBRA3E7y25fARKYRqIPR46PjwlPV9eu")
   firstName                  String
   lastName                   String
-  email                      String                       @unique
+  email                      String?                      @unique
   phoneNum                   String?                      @unique
   Address                    String?
   degree                     String?
@@ -36,6 +36,8 @@ model Employee {
   updatedBy                  String?
   createdAt                  DateTime                     @default(now())
   updatedAt                  DateTime?
+  fileName                   String?
+  path                       String?
   AKAD_Academic_Consultation AKAD_Academic_Consultation[]
   AKAD_Activity              AKAD_Activity[]
   AKAD_Grades_access         AKAD_Grades_access[]
@@ -76,7 +78,7 @@ model Student {
   firstName                  String
   lastName                   String?
   dateOfBirth                DateTime?                    @db.Date
-  gender                     gender
+  gender                     Gender
   religion                   String?
   studentEmail               String?                      @unique
   curriculumId               String?
@@ -831,18 +833,17 @@ model ReportSummary {
 }
 
 model ReportDetail {
-  rpsId         String   @unique
-  subjectName   String
-  major         String
-  credits       Int
-  parallel      String   @db.Char(1)
-  teacher       String
-  schedule      String
-  gradingSystem Json
-  studentGrade  Json
-  createAt      DateTime @default(now())
-  updateAt      DateTime
-  Rps           Rps      @relation(fields: [rpsId], references: [id], onDelete: Cascade)
+  rpsId        String   @unique
+  subjectName  String
+  major        String
+  credits      Int
+  parallel     String   @db.Char(1)
+  teacher      String
+  schedule     String
+  studentGrade Json
+  createAt     DateTime @default(now())
+  updateAt     DateTime
+  Rps          Rps      @relation(fields: [rpsId], references: [id], onDelete: Cascade)
 }
 
 model AKAD_Academic_Consultation {
@@ -1022,6 +1023,29 @@ model AssessmentIndicator {
   updatedAt   DateTime @updatedAt
 }
 
+model AKAD_Lecturer {
+  id        String @id
+  firstName String
+  lastName  String
+}
+
+model AKAD_Vmt {
+  id      String  @id
+  major   Major?
+  number  String?
+  type    String?
+  level   String?
+  content String?
+}
+
+model AKAD_guide {
+  id      String  @id
+  number  String?
+  part    String?
+  title   String?
+  content String?
+}
+
 enum Gender {
   MALE
   FEMALE
@@ -1039,11 +1063,6 @@ enum StudentStatus {
   GRADUATE
   ACTIVE
   INACTIVE
-}
-
-enum gender {
-  MALE
-  FEMALE
 }
 
 enum Thesis_Approve {

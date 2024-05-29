@@ -1,13 +1,13 @@
-import epxress from "express";
 import prisma from "../database";
 import { studentCpmkGradeType } from "../../global";
 import { auth } from "../middleware";
 import { convertShortMajor } from "../utils";
+import { Hono } from "hono";
 
-const RouterReportSummary = epxress.Router();
+const RouterReportSummary = new Hono();
 
-RouterReportSummary.put("/:rpsId", async (req, res) => {
-  const { rpsId } = req.params;
+RouterReportSummary.put("/:rpsId", async (c) => {
+  const { rpsId } = c.req.param();
   try {
     const assessmentIndicator = await prisma.assessmentIndicator.findMany();
     const rps = await prisma.rps.findUnique({
@@ -45,10 +45,13 @@ RouterReportSummary.put("/:rpsId", async (req, res) => {
       },
     });
     if (!rps) {
-      return res.status(404).json({
-        status: false,
-        message: "RPS not found",
-      });
+      return c.json(
+        {
+          status: false,
+          message: "RPS not found",
+        },
+        404
+      );
     }
 
     const students = await prisma.student.findMany({
@@ -90,7 +93,7 @@ RouterReportSummary.put("/:rpsId", async (req, res) => {
       const averagePerCpmk = rps.CpmkGrading.reduce((acc: any, curr) => {
         const sumOfGrades = curr.GradingSystem.reduce((acc, curr) => {
           const targetGrade = item.StudentGrade.find(
-            (item) => item.GradingSystem.id === curr.id
+            (item: any) => item.GradingSystem.id === curr.id
           );
           if (!targetGrade) return acc;
           return acc + targetGrade.score;
@@ -100,13 +103,16 @@ RouterReportSummary.put("/:rpsId", async (req, res) => {
         acc.push(result);
         return acc;
       }, []);
-      const overallAvg = averagePerCpmk.reduce((total, item, index, array) => {
-        total += item.average;
-        if (index === array.length - 1) {
-          total = total / array.length;
-        }
-        return total;
-      }, 0);
+      const overallAvg = averagePerCpmk.reduce(
+        (total: any, item: any, index: any, array: any) => {
+          total += item.average;
+          if (index === array.length - 1) {
+            total = total / array.length;
+          }
+          return total;
+        },
+        0
+      );
       return { averagePerCpmk, overallAvg };
     };
 
@@ -114,40 +120,49 @@ RouterReportSummary.put("/:rpsId", async (req, res) => {
       const calculatedGrade = calculateGrade(item);
       return {
         ...item,
-        maxGrade: calculatedGrade.averagePerCpmk.reduce((max, item) => {
-          if (item.average > max.average) {
-            return item;
-          }
-          return max;
-        }, calculatedGrade.averagePerCpmk[0]),
-        minGrade: calculatedGrade.averagePerCpmk.reduce((min, item) => {
-          if (item.average < min.average) {
-            return item;
-          }
-          return min;
-        }, calculatedGrade.averagePerCpmk[0]),
+        maxGrade: calculatedGrade.averagePerCpmk.reduce(
+          (max: any, item: any) => {
+            if (item.average > max.average) {
+              return item;
+            }
+            return max;
+          },
+          calculatedGrade.averagePerCpmk[0]
+        ),
+        minGrade: calculatedGrade.averagePerCpmk.reduce(
+          (min: any, item: any) => {
+            if (item.average < min.average) {
+              return item;
+            }
+            return min;
+          },
+          calculatedGrade.averagePerCpmk[0]
+        ),
         StudentGrade: calculatedGrade.averagePerCpmk,
         average: calculatedGrade.overallAvg,
       };
     });
 
-    const calculateCpmkGradeSummary = (data: studentCpmkGradeType[]) => {
+    const calculateCpmkGradeSummary: any = (data: studentCpmkGradeType[]) => {
       const desctructering = data.map((item) => item.StudentGrade);
       const flatted = desctructering.flat();
 
-      const totalAverage = flatted.reduce((accumulator, current) => {
-        if (!accumulator[current.code]) {
-          accumulator[current.code] = {
-            code: current.code,
-            sum: 0,
-            count: 0,
-            id: current.id,
-          };
-        }
-        accumulator[current.code].sum += current.average;
-        accumulator[current.code].count++;
-        return accumulator;
-      }, {});
+      const totalAverage: any[] = flatted.reduce(
+        (accumulator: any, current) => {
+          if (!accumulator[current.code]) {
+            accumulator[current.code] = {
+              code: current.code,
+              sum: 0,
+              count: 0,
+              id: current.id,
+            };
+          }
+          accumulator[current.code].sum += current.average;
+          accumulator[current.code].count++;
+          return accumulator;
+        },
+        {}
+      );
 
       const avgEach = Object.values(totalAverage).map(
         (item: { [code: string]: number }) => ({
@@ -161,28 +176,29 @@ RouterReportSummary.put("/:rpsId", async (req, res) => {
         if (index === array.length - 1) acc /= array.length;
         return acc;
       }, 0);
-      return { avgEach, overallAvg, maxItem, minItem };
+      return { avgEach, overallAvg };
     };
 
     const cpmkGradeSummary = calculateCpmkGradeSummary(studentCpmkGrade);
-    const maxItem = cpmkGradeSummary.avgEach.reduce((max, item) => {
+    const maxItem = cpmkGradeSummary.avgEach.reduce((max: any, item: any) => {
       if (item.average > max.average) {
         return item;
       }
       return max;
     }, cpmkGradeSummary.avgEach[0]);
-    const minItem = cpmkGradeSummary.avgEach.reduce((min, item) => {
+    const minItem = cpmkGradeSummary.avgEach.reduce((min: any, item: any) => {
       if (item.average < min.average) {
         return item;
       }
       return min;
     }, cpmkGradeSummary.avgEach[0]);
-    const status = assessmentIndicator.find((item) => {
-      return (
-        cpmkGradeSummary.overallAvg >= Math.floor(item.minScore) &&
-        cpmkGradeSummary.overallAvg <= Math.floor(item.maxScore)
-      );
-    })?.description;
+    const status =
+      assessmentIndicator.find((item) => {
+        return (
+          cpmkGradeSummary.overallAvg >= Math.floor(item.minScore) &&
+          cpmkGradeSummary.overallAvg <= Math.floor(item.maxScore)
+        );
+      })?.description || "Assessment Not Found";
 
     const normalize = {
       rpsId: rps.id,
@@ -215,23 +231,26 @@ RouterReportSummary.put("/:rpsId", async (req, res) => {
       update: normalize,
       create: normalize,
     });
-    res.status(200).json({
+    return c.json({
       status: true,
       message: "Success",
       data: result,
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({
-      status: false,
-      message: "Internal Server Error",
-      error,
-    });
+    return c.json(
+      {
+        status: false,
+        message: "Internal Server Error",
+        error,
+      },
+      500
+    );
   }
 });
 
-RouterReportSummary.get("/:rpsId", auth, async (req, res) => {
-  const { rpsId } = req.params;
+RouterReportSummary.get("/:rpsId", auth, async (c) => {
+  const { rpsId } = c.req.param();
   try {
     const data = await prisma.reportSummary.findUnique({
       where: {
@@ -240,23 +259,29 @@ RouterReportSummary.get("/:rpsId", auth, async (req, res) => {
     });
 
     if (!data) {
-      return res.status(404).json({
-        status: false,
-        message: "Data not found",
-      });
+      return c.json(
+        {
+          status: false,
+          message: "Data not found",
+        },
+        404
+      );
     }
 
-    return res.json({
+    return c.json({
       status: true,
       message: "Data retrieved",
       data,
     });
   } catch (error) {
-    return res.status(500).json({
-      status: false,
-      message: "Internal server error",
-      error,
-    });
+    return c.json(
+      {
+        status: false,
+        message: "Internal server error",
+        error,
+      },
+      500
+    );
   }
 });
 
