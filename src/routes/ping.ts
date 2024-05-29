@@ -3,7 +3,7 @@ import { Hono } from "hono";
 const RouterPing = new Hono();
 
 RouterPing.get("/", async (c) => {
-  c.json({
+  return c.json({
     status: true,
     message: "pong",
   });

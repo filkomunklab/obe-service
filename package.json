@@ -1,6 +1,8 @@
 {
   "scripts": {
-    "dev": "bun run --hot src/index.ts"
+    "dev": "bun run --hot src/index.ts",
+    "prestart": "bunx prisma db pull && bunx prisma generate",
+    "start": "bun run src/index.ts"
   },
   "dependencies": {
     "@hono/zod-validator": "^0.2.1",

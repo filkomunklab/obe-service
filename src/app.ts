@@ -3,7 +3,6 @@ import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { prettyJSON } from "hono/pretty-json";
 import { serveStatic } from "hono/bun";
-import * as path from "path";
 
 //Router List
 import RouterPing from "./routes/ping";
@@ -14,11 +13,17 @@ import RouterStudentGrade from "./routes/studentGrade";
 import RouterReportDetail from "./routes/reportDetail";
 import RouterReportSummary from "./routes/reportSummary";
 
-const app = new Hono().basePath("/api");
+const app = new Hono();
 
 app.use(prettyJSON());
 app.use(logger()); // log request
-app.use("/static/*", serveStatic({ path: path.join(__dirname, "../public") }));
+app.use(
+  "/static/*",
+  serveStatic({
+    root: "./",
+    rewriteRequestPath: (path) => path.replace(/^\/static\//, "/public/"),
+  })
+);
 app.use(
   cors({
     origin: [
@@ -30,12 +35,12 @@ app.use(
   })
 );
 
-app.route("/ping", RouterPing);
-app.route("/curriculum", RouterCurriculum);
-app.route("/subject", RouterSubject);
-app.route("/rps", RouterRps);
-app.route("/student-grade", RouterStudentGrade);
-app.route("/report-detail", RouterReportDetail);
-app.route("/report-summary", RouterReportSummary);
+app.route("/api/ping", RouterPing);
+app.route("/api/curriculum", RouterCurriculum);
+app.route("/api/subject", RouterSubject);
+app.route("/api/rps", RouterRps);
+app.route("/api/student-grade", RouterStudentGrade);
+app.route("/api/report-detail", RouterReportDetail);
+app.route("/api/report-summary", RouterReportSummary);
 
 export default app;
