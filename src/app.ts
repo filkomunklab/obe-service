@@ -35,12 +35,14 @@ app.use(
   })
 );
 
-app.route("/api/ping", RouterPing);
-app.route("/api/curriculum", RouterCurriculum);
-app.route("/api/subject", RouterSubject);
-app.route("/api/rps", RouterRps);
-app.route("/api/student-grade", RouterStudentGrade);
-app.route("/api/report-detail", RouterReportDetail);
-app.route("/api/report-summary", RouterReportSummary);
+app
+  .basePath("/api")
+  .route("/ping", RouterPing)
+  .route("/curriculum", RouterCurriculum)
+  .route("/subject", RouterSubject)
+  .route("/rps", RouterRps)
+  .route("/student-grade", RouterStudentGrade)
+  .route("/report-detail", RouterReportDetail)
+  .route("/report-summary", RouterReportSummary);
 
 export default app;
