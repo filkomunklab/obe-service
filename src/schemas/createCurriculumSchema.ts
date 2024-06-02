@@ -1,26 +1,13 @@
 import { Major } from "@prisma/client";
-import * as yup from "yup";
+import { z } from "zod";
+import oneOf from "../utils/oneOf";
+import { checkFileFormat } from "../utils";
 
-const checkFileFormat = (value: any) => {
-  const fileType = value.mimetype;
-  return (
-    fileType ===
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-  );
-};
-
-const createCurriculumSchema = yup.object().shape({
-  major: yup.string().oneOf(Object.values(Major)).required(),
-  year: yup
-    .string()
-    .length(4)
-    .matches(/^\d+$/, "Year must be a number")
-    .required(),
-  headOfProgramStudyId: yup.string().required(),
-  file: yup
-    .mixed()
-    .required()
-    .test("fileType", "Invalid file type", checkFileFormat),
+const createCurriculumSchema = z.object({
+  major: oneOf(Object.values(Major) as any),
+  year: z.string().length(4).regex(/^\d+$/, "Year must be a number"),
+  headOfProgramStudyId: z.string(),
+  curriculumFile: z.any().refine(checkFileFormat, "Invalid file type"),
 });
 
 export default createCurriculumSchema;

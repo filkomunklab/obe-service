@@ -1,14 +1,12 @@
-import * as yup from "yup";
+import { z } from "zod";
 
-const cplSchema = yup.array().of(
-  yup
-    .object()
-    .shape({
-      code: yup.string().required(),
-      description: yup.string().required(),
-      curriculumId: yup.string().required(),
+const cplSchema = z
+  .array(
+    z.object({
+      code: z.string(),
+      description: z.string(),
+      curriculumId: z.string(),
     })
-    .noUnknown()
-);
-
+  )
+  .min(1);
 export default cplSchema;

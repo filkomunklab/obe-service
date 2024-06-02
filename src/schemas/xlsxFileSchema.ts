@@ -1,21 +1,8 @@
-import * as yup from "yup";
+import { z } from "zod";
+import { checkFileFormat } from "../utils";
 
-const checkFileFormat = (value: any) => {
-  const fileType = value.mimetype;
-  return (
-    fileType ===
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-  );
-};
-
-const xlsxFileSchema = yup
-  .object()
-  .shape({
-    file: yup
-      .mixed()
-      .required("An xlsx file is required")
-      .test("check-file-format", "Unsupported Format", checkFileFormat),
-  })
-  .noUnknown();
+const xlsxFileSchema = z.object({
+  file: z.any().refine(checkFileFormat, "Unsupported Format"),
+});
 
 export default xlsxFileSchema;

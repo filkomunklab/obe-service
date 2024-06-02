@@ -1,25 +1,24 @@
-import jwt from "jsonwebtoken";
+// import jwt from "jsonwebtoken";
 import { getToken } from "../utils";
 import prisma from "../database";
-import { NextFunction, Request, Response } from "express";
 import Config from "../config/config";
-import { ExtendedRequest } from "../../global";
+import { ExtendedContext } from "../../global";
+import { Context, Next } from "hono";
+import { verify } from "hono/jwt";
 
-export default async function auth(
-  req: ExtendedRequest,
-  res: Response,
-  next: NextFunction
-) {
+export default async function auth(c: ExtendedContext, next: Next) {
   try {
-    let token = getToken(req);
+    let token = getToken(c.req);
 
     if (!token) {
-      return res
-        .status(401)
-        .send({ status: "FAILED", data: { error: "token not found" } });
+      return c.json(
+        { status: "FAILED", data: { error: "token not found" } },
+        401
+      );
     }
 
-    req.user = jwt.verify(token, Config.SECRET_KEY);
+    // c.req.user = jwt.verify(token, Config.SECRET_KEY);
+    c.req.user = await verify(token, Config.SECRET_KEY);
     const isAdmin = await prisma.admin.findUnique({
       where: {
         token,
@@ -38,15 +37,14 @@ export default async function auth(
 
     if (isAdmin || isEmployee || isStudent) {
       // The token belongs to an admin, employee, or student
-      next();
+      await next();
     } else {
-      return res
-        .status(401)
-        .send({ status: "FAILED", data: { error: "token expired" } });
+      return c.json(
+        { status: "FAILED", data: { error: "token expired" } },
+        401
+      );
     }
   } catch (error) {
-    return res
-      .status(401)
-      .send({ status: "FAILED", data: { error: "invalid token" } });
+    return c.json({ status: "FAILED", data: { error: "invalid token" } }, 401);
   }
 }

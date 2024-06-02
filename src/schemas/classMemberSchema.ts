@@ -1,12 +1,9 @@
-import * as yup from "yup";
-const classMemberSchema = yup.array().of(
-  yup
-    .object()
-    .shape({
-      rpsId: yup.string().required(),
-      studentNim: yup.string().required(),
-    })
-    .noUnknown()
+import { z } from "zod";
+const classMemberSchema = z.array(
+  z.object({
+    rpsId: z.string(),
+    studentNim: z.string(),
+  })
 );
 
 export default classMemberSchema;

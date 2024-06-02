@@ -1,30 +1,26 @@
-import express from "express";
 import prisma from "../database";
-import multer from "multer";
 import { extractXlsx, parsePrerequisites } from "../utils";
 import { Cpl, CurriculumFile } from "../../global";
-import { auth, validateSchema } from "../middleware";
+import { auth } from "../middleware";
 import { xlsxFileSchema, createCurriculumSchema } from "../schemas";
 import cplSchema from "../schemas/cplSchema";
 import curriculumSchema from "../schemas/curriculumSchema";
-import { ValidationError } from "yup";
+import { Hono } from "hono";
+import { zValidator } from "@hono/zod-validator";
 
-const upload = multer();
-
-const RouterCurriculum = express.Router();
+const RouterCurriculum = new Hono();
 
 // post Curriculum
 RouterCurriculum.post(
   "/",
   auth,
-  upload.single("curriculumFile"),
-  validateSchema(createCurriculumSchema),
-  async (req, res) => {
-    const { major, year, headOfProgramStudyId } = req.body;
-    const file = req.file;
+  zValidator("form", createCurriculumSchema),
+  async (c) => {
+    const { major, year, headOfProgramStudyId, curriculumFile } =
+      c.req.valid("form");
 
     try {
-      const data = extractXlsx(file);
+      const data = await extractXlsx(curriculumFile);
       const parsedData: CurriculumFile[] = data.map((row: any) => ({
         code: row.code,
         indonesiaName: row.indonesiaName,
@@ -35,7 +31,17 @@ RouterCurriculum.post(
         semester: parseInt(row.semester),
       }));
 
-      await curriculumSchema.validate(parsedData, { abortEarly: false });
+      const validation = await curriculumSchema.spa(parsedData);
+      if (!validation.success) {
+        return c.json(
+          {
+            status: false,
+            message: "Please provide valid xlsx data",
+            error: validation.error,
+          },
+          400
+        );
+      }
 
       const createCurriculum = await prisma.$transaction(async (prisma) => {
         const curriculum = await prisma.curriculum.create({
@@ -75,8 +81,9 @@ RouterCurriculum.post(
             prerequisite:
               parsedData.find((data) => data.code === subject.code)
                 ?.prerequisite || [],
-            semester: parsedData.find((data) => data.code === subject.code)
-              .semester,
+            semester:
+              parsedData.find((data) => data.code === subject.code)?.semester ||
+              0,
           })),
         });
 
@@ -99,35 +106,57 @@ RouterCurriculum.post(
         });
       });
 
-      res.status(201).json({
-        status: true,
-        message: "Curriculum created successfully",
-        data: createCurriculum,
-      });
-    } catch (error) {
-      if (error.name === "ValidationError") {
-        return res.status(400).json({
-          status: false,
-          message: "Please provide valid xlsx data",
-          error: error.inner.map((err: ValidationError) => err.message),
-        });
+      return c.json(
+        {
+          status: true,
+          message: "Curriculum created successfully",
+          data: createCurriculum,
+        },
+        201
+      );
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        return c.json(
+          {
+            status: false,
+            message: "Please provide valid xlsx data",
+          },
+          400
+        );
       }
 
       if (error.code === "P2002") {
-        return res.status(409).json({
-          status: false,
-          message: "Curriculum already exist",
-          error,
-        });
+        return c.json(
+          {
+            status: false,
+            message: "Curriculum already exist",
+            error,
+          },
+          409
+        );
+      }
+
+      if (error.code === "P2003") {
+        return c.json(
+          {
+            status: false,
+            message: "Head of program study not found",
+            error,
+          },
+          404
+        );
       }
 
       console.log(error);
 
-      res.status(500).json({
-        status: false,
-        message: "Internal server error",
-        error,
-      });
+      return c.json(
+        {
+          status: false,
+          message: "Internal server error",
+          error,
+        },
+        500
+      );
     }
   }
 );
@@ -136,21 +165,30 @@ RouterCurriculum.post(
 RouterCurriculum.post(
   "/:id/cpl",
   auth,
-  upload.single("curriculumCpl"),
-  validateSchema(xlsxFileSchema),
-  async (req, res) => {
-    const { id } = req.params;
-    const file = req.file;
+  zValidator("form", xlsxFileSchema),
+  async (c) => {
+    const id = c.req.param("id");
+    const { file } = c.req.valid("form");
 
     try {
-      const data = extractXlsx(file);
+      const data = await extractXlsx(file);
       const parsedData: Cpl[] = data.map((row: any) => ({
         code: row.code,
         description: row.description,
         curriculumId: id,
       }));
 
-      await cplSchema.validate(parsedData, { abortEarly: false });
+      const validation = await cplSchema.spa(parsedData);
+      if (!validation.success) {
+        return c.json(
+          {
+            status: false,
+            message: "Please provide valid xlsx data",
+            error: validation.error,
+          },
+          400
+        );
+      }
 
       const result = await prisma.$transaction(async (prisma) => {
         await prisma.cpl.createMany({
@@ -163,49 +201,64 @@ RouterCurriculum.post(
         });
       });
 
-      res.status(201).send({
-        status: true,
-        message: "Curriculum's CPLs created successuly",
-        data: result,
-      });
-    } catch (error) {
+      return c.json(
+        {
+          status: true,
+          message: "Curriculum's CPLs created successuly",
+          data: result,
+        },
+        201
+      );
+    } catch (error: any) {
       if (error.code === "P2002") {
-        return res.status(409).json({
-          status: false,
-          message: "Curriculum's CPLs already exist",
-          error,
-        });
+        return c.json(
+          {
+            status: false,
+            message: "Curriculum's CPLs already exist",
+            error,
+          },
+          409
+        );
       }
 
       if (error.code === "P2003") {
-        return res.status(404).json({
-          status: false,
-          message: "Curriculum not found",
-          error,
-        });
+        return c.json(
+          {
+            status: false,
+            message: "Curriculum not found",
+            error,
+          },
+          404
+        );
       }
 
-      if (error.name === "ValidationError") {
-        return res.status(400).json({
-          status: false,
-          message: "Please provide valid data",
-          error: error.name,
-        });
+      if (error.name === "ZodError") {
+        return c.json(
+          {
+            status: false,
+            message: "Please provide valid data",
+            error: error.name,
+          },
+          400
+        );
       }
 
       console.log(error);
-      res.status(500).json({
-        status: false,
-        message: "Internal server error",
-        error,
-      });
+      c.json(
+        {
+          status: false,
+          message: "Internal server error",
+          error,
+        },
+        500
+      );
     }
   }
 );
 
-RouterCurriculum.get("/", auth, async (req, res) => {
+RouterCurriculum.get("/", auth, async (c) => {
   try {
-    const { major } = req.query;
+    const major = c.req.query("major");
     const data = await prisma.curriculum.findMany({
       where: {
         major: (major as string) || undefined,
@@ -229,30 +282,36 @@ RouterCurriculum.get("/", auth, async (req, res) => {
     });
 
     if (!data || data.length === 0) {
-      return res.status(404).json({
-        status: false,
-        message: "Data not found",
-      });
+      return c.json(
+        {
+          status: false,
+          message: "Data not found",
+        },
+        404
+      );
     }
 
-    res.json({
+    return c.json({
       status: true,
       message: "Data retrieved",
       data,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({
-      status: false,
-      message: "Internal server error",
-      error,
-    });
+    return c.json(
+      {
+        status: false,
+        message: "Internal server error",
+        error,
+      },
+      500
+    );
   }
 });
 
-RouterCurriculum.get("/:id", auth, async (req, res) => {
+RouterCurriculum.get("/:id", auth, async (c) => {
   try {
-    const { id } = req.params;
+    const id = c.req.param("id");
     const data = await prisma.curriculum.findUnique({
       where: {
         id,
@@ -287,29 +346,35 @@ RouterCurriculum.get("/:id", auth, async (req, res) => {
     });
 
     if (!data) {
-      return res.status(404).json({
-        status: false,
-        message: "Data not found",
-      });
+      return c.json(
+        {
+          status: false,
+          message: "Data not found",
+        },
+        404
+      );
     }
 
-    res.json({
+    return c.json({
       status: true,
       message: "Data retrieved",
       data,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({
-      status: false,
-      message: "Internal server error",
-      error,
-    });
+    return c.json(
+      {
+        status: false,
+        message: "Internal server error",
+        error,
+      },
+      500
+    );
   }
 });
 
-RouterCurriculum.delete("/:id", auth, async (req, res) => {
-  const { id } = req.params;
+RouterCurriculum.delete("/:id", auth, async (c) => {
+  const id = c.req.param("id");
   try {
     const data = await prisma.curriculum.delete({
       where: {
@@ -329,26 +394,32 @@ RouterCurriculum.delete("/:id", auth, async (req, res) => {
       },
     });
 
-    res.json({
+    return c.json({
       status: true,
       message: "Data deleted",
       data,
     });
-  } catch (error) {
+  } catch (error: any) {
     if (error.code === "P2025") {
-      return res.status(404).json({
-        status: false,
-        message: "Data not found",
-        error,
-      });
+      return c.json(
+        {
+          status: false,
+          message: "Data not found",
+          error,
+        },
+        404
+      );
     }
 
     console.error(error);
-    res.status(500).json({
-      status: false,
-      message: "Internal server error",
-      error,
-    });
+    return c.json(
+      {
+        status: false,
+        message: "Internal server error",
+        error,
+      },
+      500
+    );
   }
 });
 

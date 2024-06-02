@@ -1,12 +1,12 @@
-import express, { Router } from "express";
 import prisma from "../database";
 import { ReportDetail } from "@prisma/client";
 import { auth } from "../middleware";
+import { Hono } from "hono";
 
-const RouterReportDetail = express.Router();
+const RouterReportDetail = new Hono();
 
-RouterReportDetail.put("/:rpsId", auth, async (req, res) => {
-  const { rpsId } = req.params;
+RouterReportDetail.put("/:rpsId", auth, async (c) => {
+  const { rpsId } = c.req.param();
   try {
     const rps = await prisma.rps.findUnique({
       where: {
@@ -47,10 +47,13 @@ RouterReportDetail.put("/:rpsId", auth, async (req, res) => {
     });
 
     if (!rps) {
-      return res.status(404).json({
-        status: false,
-        message: "RPS not found",
-      });
+      return c.json(
+        {
+          status: false,
+          message: "RPS not found",
+        },
+        404
+      );
     }
 
     const students = await prisma.student.findMany({
@@ -70,13 +73,14 @@ RouterReportDetail.put("/:rpsId", auth, async (req, res) => {
       },
     });
 
-    console.log(students);
-
     if (students.length === 0) {
-      return res.status(404).json({
-        status: false,
-        message: "Students not found. Add students to the class first.",
-      });
+      return c.json(
+        {
+          status: false,
+          message: "Students not found. Add students to the class first.",
+        },
+        404
+      );
     }
 
     const groupGradingSystem = rps.CpmkGrading.map((item) => {
@@ -107,7 +111,9 @@ RouterReportDetail.put("/:rpsId", auth, async (req, res) => {
       };
     });
 
-    const normalize: Omit<ReportDetail, "createAt"> = {
+    const normalize: Omit<ReportDetail, "createAt" | "studentGrade"> & {
+      studentGrade: any;
+    } = {
       rpsId: rps.id,
       subjectName: `${rps.Subject.englishName} / ${rps.Subject.indonesiaName}`,
       major: rps.Subject.Curriculum_Subject.map(
@@ -117,8 +123,7 @@ RouterReportDetail.put("/:rpsId", auth, async (req, res) => {
       parallel: rps.parallel,
       teacher: `${rps.teacher.firstName} ${rps.teacher.lastName}`,
       schedule: rps.schedule,
-      gradingSystem: {},
-      studentGrade: JSON.stringify(groupGradingSystem),
+      studentGrade: groupGradingSystem,
       updateAt: new Date(),
     };
 
@@ -130,23 +135,26 @@ RouterReportDetail.put("/:rpsId", auth, async (req, res) => {
       create: normalize,
     });
 
-    return res.json({
+    return c.json({
       status: true,
       message: "Data retrieved",
       data: result,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.log(error);
-    return res.status(500).json({
-      status: false,
-      message: "Internal server error",
-      error,
-    });
+    return c.json(
+      {
+        status: false,
+        message: "Internal server error",
+        error,
+      },
+      500
+    );
   }
 });
 
-RouterReportDetail.get("/:rpsId", auth, async (req, res) => {
-  const { rpsId } = req.params;
+RouterReportDetail.get("/:rpsId", auth, async (c) => {
+  const { rpsId } = c.req.param();
   try {
     const data = await prisma.reportDetail.findUnique({
       where: {
@@ -166,23 +174,29 @@ RouterReportDetail.get("/:rpsId", auth, async (req, res) => {
     });
 
     if (!data) {
-      return res.status(404).json({
-        status: false,
-        message: "Data not found",
-      });
+      return c.json(
+        {
+          status: false,
+          message: "Data not found",
+        },
+        404
+      );
     }
 
-    return res.json({
+    return c.json({
       status: true,
       message: "Data retrieved",
       data,
     });
   } catch (error) {
-    return res.status(500).json({
-      status: false,
-      message: "Internal server error",
-      error,
-    });
+    return c.json(
+      {
+        status: false,
+        message: "Internal server error",
+        error,
+      },
+      500
+    );
   }
 });
 

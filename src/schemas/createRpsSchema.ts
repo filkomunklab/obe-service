@@ -1,126 +1,102 @@
-import * as yup from "yup";
+import { z } from "zod";
 
-const calculateTotalGradingWeight = function (value: any) {
-  const gradingWeight = this.parent.gradingSystem.map(
-    (grading: any) => grading.gradingWeight
-  );
-  return gradingWeight.reduce((a: number, b: number) => a + b, 0) === value;
-};
-
-const createRpsSchema = yup
-  .object()
-  .shape({
-    teacherId: yup.string().required(),
-    subjectId: yup.string().required(),
-    subjectFamily: yup.string().required(),
-    subjectDescription: yup.string().required(),
-    parallel: yup
+const createRpsSchema = z
+  .object({
+    teacherId: z.string(),
+    subjectId: z.string(),
+    subjectFamily: z.string(),
+    subjectDescription: z.string(),
+    parallel: z
       .string()
       .length(1)
-      .matches(/^[A-Za-z]$/, "Must be a single alphabetical character")
-      .required(),
-    schedule: yup.string().required(),
-    rpsDeveloper: yup.string().required(),
-    headOfExpertise: yup.string().required(),
-    headOfProgramStudy: yup.string().required(),
-    cpmk: yup
-      .array()
-      .of(
-        yup
-          .object()
-          .shape({
-            description: yup.string().required(),
-            code: yup.string().required(),
-            supportedCplIds: yup.array().of(yup.string()).required(),
-          })
-          .noUnknown()
-      )
-      .required(),
-    cpmkGrading: yup.array().of(
-      yup
-        .object()
-        .shape({
-          code: yup.string().required(),
-          // this total height must same with sum of gradingWeight
-          totalGradingWeight: yup
-            .number()
-            .required()
-            .test(
-              "is-valid-total-weight",
-              "Total weight must same with sum of gradingWeight ",
-              calculateTotalGradingWeight
-            ),
-          gradingSystem: yup
-            .array()
-            .of(
-              yup.object().shape({
-                gradingName: yup.string().required(),
-                gradingWeight: yup.number().required(),
-              })
-            )
-            .required(),
-        })
-        .noUnknown()
+      .regex(/^[A-Za-z]$/, "Must be a single alphabetical character"),
+    schedule: z.string(),
+    rpsDeveloper: z.string(),
+    headOfExpertise: z.string(),
+    headOfProgramStudy: z.string(),
+    cpmk: z.array(
+      z.object({
+        description: z.string(),
+        code: z.string(),
+        supportedCplIds: z.array(z.string()),
+      })
     ),
-    mainReferences: yup.array().of(yup.string()).required(),
-    supportingReferences: yup.array().of(yup.string()).required(),
-    software: yup.string().required(),
-    hardware: yup.string().required(),
-    teamTeaching: yup.array().of(yup.string()).required(),
-    minPassStudents: yup.string().required(),
-    minPassGrade: yup.string().required(),
-    meetingPlan: yup
-      .array()
-      .of(
-        yup
-          .object()
-          .shape({
-            week: yup.string().required(),
-            cpmkList: yup.array().of(yup.string().required()).required(),
-            subCpmkDescription: yup.string().required(),
-            achievementIndicators: yup.string().required(),
-            assessmentModel: yup.string().required(),
-            material: yup.string().required(),
-            method: yup.string().required(),
-            offlineActivity: yup.string().required(),
-            onlineActivity: yup.string().required(),
+    cpmkGrading: z
+      .array(
+        z
+          .object({
+            code: z.string(),
+            totalGradingWeight: z.number(),
+            gradingSystem: z.array(
+              z.object({
+                gradingName: z.string(),
+                gradingWeight: z.number(),
+              })
+            ),
           })
-          .noUnknown()
+          .refine((value: any) => {
+            const total = value.gradingSystem.reduce(
+              (a: number, b: any) => a + b.gradingWeight,
+              0
+            );
+            if (total !== value.totalGradingWeight) {
+              return false;
+            }
+            return true;
+          }, "Total weight must be equal to grading weight")
       )
-      .required(),
-    studentAssignmentPlan: yup
-      .array()
-      .of(
-        yup
-          .object()
-          .shape({
-            assignmentModel: yup.string().required(),
-            references: yup.string().required(),
-            subLearningOutcomes: yup.string().required(),
-            assignmentDescription: yup.string().required(),
-            icbValuation: yup.string().required(),
-            dueSchedule: yup.string().required(),
-            others: yup.string().required(),
-            referenceList: yup.string().required(),
-          })
-          .noUnknown()
-      )
-      .required(),
+      .refine((value: any) => {
+        const total = value.reduce(
+          (a: number, b: any) => a + b.totalGradingWeight,
+          0
+        );
+        if (total !== 100) {
+          return false;
+        }
+        return true;
+      }, "Total weight must be 100"),
+    mainReferences: z.array(z.string()),
+    supportingReferences: z.array(z.string()),
+    software: z.string(),
+    hardware: z.string(),
+    teamTeaching: z.array(z.string()),
+    minPassStudents: z.string(),
+    minPassGrade: z.string(),
+    meetingPlan: z.array(
+      z.object({
+        week: z.string(),
+        cpmkList: z.array(z.string()),
+        subCpmkDescription: z.string(),
+        achievementIndicators: z.string(),
+        assessmentModel: z.string(),
+        material: z.string(),
+        method: z.string(),
+        offlineActivity: z.string(),
+        onlineActivity: z.string(),
+      })
+    ),
+    studentAssignmentPlan: z.array(
+      z.object({
+        assignmentModel: z.string(),
+        references: z.string(),
+        subLearningOutcomes: z.string(),
+        assignmentDescription: z.string(),
+        icbValuation: z.string(),
+        dueSchedule: z.string(),
+        others: z.string(),
+        referenceList: z.string(),
+      })
+    ),
   })
-  .test("is-valid-sum", "Total weight must be 100", (value) => {
+  .refine((value: any) => {
     const total = value.cpmkGrading.reduce(
       (a: number, b: any) => a + b.totalGradingWeight,
       0
     );
     if (total !== 100) {
-      throw new yup.ValidationError(
-        "Total weight must be 100",
-        value,
-        "cpmkGrading"
-      );
+      return false;
     }
     return true;
-  })
-  .noUnknown();
+  }, "Total weight must be 100");
 
 export default createRpsSchema;

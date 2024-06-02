@@ -1,19 +1,18 @@
-import express from "express";
-import { auth, validateSchema } from "../middleware";
+import { auth } from "../middleware";
 import { createRpsSchema, xlsxFileSchema } from "../schemas";
-import { CreateRps } from "../../global";
 import prisma from "../database";
 import { extractXlsx } from "../utils";
-import multer from "multer";
-import { ClassStudent, Major } from "@prisma/client";
+import { ClassStudent, Major, status } from "@prisma/client";
 import classMemberSchema from "../schemas/classMemberSchema";
-import { count } from "console";
+import { Hono } from "hono";
+import { zValidator } from "@hono/zod-validator";
+import { z } from "zod";
+import oneOf from "../utils/oneOf";
 
-const upload = multer();
-const RouterRps = express.Router();
+const RouterRps = new Hono();
 
-RouterRps.get("/:id", auth, async (req, res) => {
-  const { id } = req.params;
+RouterRps.get("/:id", auth, async (c) => {
+  const id = c.req.param("id");
   try {
     const data = await prisma.rps.findUnique({
       where: {
@@ -60,6 +59,16 @@ RouterRps.get("/:id", auth, async (req, res) => {
       },
     });
 
+    if (!data) {
+      return c.json(
+        {
+          status: false,
+          message: "Rps not found",
+        },
+        404
+      );
+    }
+
     const Prerequisite = await Promise.all(
       data?.Subject.Curriculum_Subject.map(async (item) => ({
         curriculum: item.curriculum,
@@ -73,97 +82,125 @@ RouterRps.get("/:id", auth, async (req, res) => {
       }))
     );
 
-    res.json({
+    return c.json({
       status: true,
       message: "Success",
       data: { ...data, Prerequisite },
     });
-  } catch (error) {
+  } catch (error: any) {
     if (error.code === "P2025") {
-      return res.status(404).json({
-        status: false,
-        message: "Rps not found",
-        error,
-      });
+      return c.json(
+        {
+          status: false,
+          message: "Rps not found",
+          error,
+        },
+        404
+      );
     }
 
     console.log(error);
-    res.status(500).json({
-      status: false,
-      message: "Internal Server Error",
-      error,
-    });
+    return c.json(
+      {
+        status: false,
+        message: "Internal Server Error",
+        error,
+      },
+      500
+    );
   }
 });
 
-RouterRps.delete("/:id", auth, async (req, res) => {
-  const { id } = req.params;
+RouterRps.delete("/:id", auth, async (c) => {
+  const id = c.req.param("id");
   try {
     const data = await prisma.rps.delete({
       where: {
         id,
       },
     });
-    res.json({
+    return c.json({
       status: true,
       message: "Success",
       data,
     });
-  } catch (error) {
+  } catch (error: any) {
     if (error.code === "P2025") {
-      return res.status(404).json({
-        status: false,
-        message: "Rps not found",
-        error,
-      });
+      return c.json(
+        {
+          status: false,
+          message: "Rps not found",
+          error,
+        },
+        404
+      );
     }
 
     console.log(error);
-    res.status(500).json({
-      status: false,
-      message: "Internal Server Error",
-      error,
-    });
-  }
-});
-
-RouterRps.patch("/:id", auth, async (req, res) => {
-  const { id } = req.params;
-  const { status } = req.body;
-  try {
-    const data = await prisma.rps.update({
-      where: {
-        id,
-      },
-      data: {
-        status,
-      },
-    });
-    res.json({
-      status: true,
-      message: "Success",
-      data,
-    });
-  } catch (error) {
-    if (error.code === "P2025") {
-      return res.status(404).json({
+    return c.json(
+      {
         status: false,
-        message: "Rps not found",
+        message: "Internal Server Error",
         error,
-      });
-    }
-
-    console.log(error);
-    res.status(500).json({
-      status: false,
-      message: "Internal Server Error",
-      error,
-    });
+      },
+      500
+    );
   }
 });
 
-RouterRps.get("/list/all", async (req, res) => {
-  const { major, curriculumId } = req.query;
+RouterRps.patch(
+  "/:id",
+  auth,
+  zValidator(
+    "json",
+    z.object({
+      status: oneOf(Object.values(status) as any),
+    })
+  ),
+  async (c) => {
+    const id = c.req.param("id");
+    const { status } = c.req.valid("json");
+    try {
+      const data = await prisma.rps.update({
+        where: {
+          id,
+        },
+        data: {
+          status,
+        },
+      });
+      return c.json({
+        status: true,
+        message: "Success",
+        data,
+      });
+    } catch (error: any) {
+      if (error.code === "P2025") {
+        return c.json(
+          {
+            status: false,
+            message: "Rps not found",
+            error,
+          },
+          404
+        );
+      }
+
+      console.log(error);
+      return c.json(
+        {
+          status: false,
+          message: "Internal Server Error",
+          error,
+        },
+        500
+      );
+    }
+  }
+);
+
+RouterRps.get("/list/all", async (c) => {
+  const { major, curriculumId } = c.req.query();
   try {
     const data = await prisma.rps.findMany({
       where: {
@@ -214,22 +251,25 @@ RouterRps.get("/list/all", async (req, res) => {
         },
       },
     });
-    res.json({
+    return c.json({
       status: true,
       message: "Success",
       data,
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({
-      status: false,
-      message: "Internal Server Error",
-      error,
-    });
+    return c.json(
+      {
+        status: false,
+        message: "Internal Server Error",
+        error,
+      },
+      500
+    );
   }
 });
 
-RouterRps.get("/list/major-summary", async (req, res) => {
+RouterRps.get("/list/major-summary", async (c) => {
   try {
     const data = await prisma.curriculum.findMany({
       select: {
@@ -280,23 +320,26 @@ RouterRps.get("/list/major-summary", async (req, res) => {
       (item) => item.major !== "NONE" && item.major !== "DKV"
     );
 
-    res.json({
+    return c.json({
       status: true,
       message: "Success",
       data: filter,
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({
-      status: false,
-      message: "Internal Server Error",
-      error,
-    });
+    return c.json(
+      {
+        status: false,
+        message: "Internal Server Error",
+        error,
+      },
+      500
+    );
   }
 });
 
-RouterRps.get("/list/teacher/:teacherId", auth, async (req, res) => {
-  const { teacherId } = req.params;
+RouterRps.get("/list/teacher/:teacherId", auth, async (c) => {
+  const { teacherId } = c.req.param();
   try {
     const rps = await prisma.rps.findMany({
       where: {
@@ -338,10 +381,13 @@ RouterRps.get("/list/teacher/:teacherId", auth, async (req, res) => {
       },
     });
     if (rps.length === 0) {
-      return res.status(404).json({
-        status: false,
-        message: "Data not found",
-      });
+      return c.json(
+        {
+          status: false,
+          message: "Data not found",
+        },
+        404
+      );
     }
     const metadata = {
       teacher: rps[0]?.teacher,
@@ -353,23 +399,26 @@ RouterRps.get("/list/teacher/:teacherId", auth, async (req, res) => {
       }, 0),
       rpsTotal: rps.length,
     };
-    res.json({
+    return c.json({
       status: true,
       message: "Success",
       data: { rps, metadata },
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({
-      status: false,
-      message: "Internal Server Error",
-      error,
-    });
+    return c.json(
+      {
+        status: false,
+        message: "Internal Server Error",
+        error,
+      },
+      500
+    );
   }
 });
 
-RouterRps.post("/", auth, validateSchema(createRpsSchema), async (req, res) => {
-  const body: CreateRps = req.body;
+RouterRps.post("/", auth, zValidator("json", createRpsSchema), async (c) => {
+  const body = c.req.valid("json");
   try {
     const {
       cpmkGrading: cpmkGradingPayload,
@@ -447,46 +496,57 @@ RouterRps.post("/", auth, validateSchema(createRpsSchema), async (req, res) => {
       });
     });
 
-    res.status(201).json({
-      status: true,
-      message: "Rps created successfully",
-      data: result,
-    });
-  } catch (error) {
+    return c.json(
+      {
+        status: true,
+        message: "Rps created successfully",
+        data: result,
+      },
+      201
+    );
+  } catch (error: any) {
     if (error.code === "P2002") {
-      return res.status(409).json({
-        status: false,
-        message: "Conflict! please check dupplicate data or code",
-        error,
-      });
+      return c.json(
+        {
+          status: false,
+          message: "Conflict! please check dupplicate data or code",
+          error,
+        },
+        409
+      );
     }
 
     if (error.code === "P2003") {
-      return res.status(404).json({
-        status: false,
-        message: "Subject or CPL not found",
-        error,
-      });
+      return c.json(
+        {
+          status: false,
+          message: "Subject or CPL not found",
+          error,
+        },
+        404
+      );
     }
     console.log(error);
-    res.status(500).json({
-      status: false,
-      message: "Internal Server Error",
-      error,
-    });
+    return c.json(
+      {
+        status: false,
+        message: "Internal Server Error",
+        error,
+      },
+      500
+    );
   }
 });
 
 RouterRps.post(
   "/:id/member",
   auth,
-  upload.single("classMember"),
-  validateSchema(xlsxFileSchema),
-  async (req, res) => {
-    const { id } = req.params;
-    const file = req.file;
+  zValidator("form", xlsxFileSchema),
+  async (c) => {
+    const { id } = c.req.param();
+    const { file } = c.req.valid("form");
     try {
-      const data = extractXlsx(file);
+      const data = await extractXlsx(file);
       const parsedData: Pick<ClassStudent, "rpsId" | "studentNim">[] = data.map(
         (row: any) => ({
           rpsId: id,
@@ -504,14 +564,24 @@ RouterRps.post(
           return !students.find((student) => student.nim === nim);
         });
       if (unkownNim.length > 0) {
-        return res.status(404).json({
+        return c.json({
           status: false,
-          message: `These NIM didn't exist on database: ${unkownNim.join(
-            ", "
-          )}`,
+          message: `These NIM didn't exist on database: ${
+            (unkownNim.join(", "), 404)
+          }`,
         });
       }
-      await classMemberSchema.validate(parsedData);
+      const isValid = await classMemberSchema.spa(parsedData);
+      if (!isValid.success) {
+        return c.json(
+          {
+            status: false,
+            message: "Validation error. Please provide correct data",
+            error: isValid.error,
+          },
+          400
+        );
+      }
       const rps = await prisma.rps.findUnique({
         where: {
           id,
@@ -521,42 +591,57 @@ RouterRps.post(
         },
       });
       if (!rps) {
-        return res.status(404).json({
-          status: false,
-          message: "Rps not found",
-        });
+        return c.json(
+          {
+            status: false,
+            message: "Rps not found",
+          },
+          404
+        );
       }
       const result = await prisma.classStudent.createMany({
         data: parsedData,
         skipDuplicates: true,
       });
-      res.status(201).json({
-        status: true,
-        message: "Member added to Rps",
-        data: result,
-      });
-    } catch (error) {
+      return c.json(
+        {
+          status: true,
+          message: "Member added to Rps",
+          data: result,
+        },
+        201
+      );
+    } catch (error: any) {
       if (error.code === "P2002") {
-        return res.status(409).json({
-          status: false,
-          message: "Student already in the class",
-          error,
-        });
+        return c.json(
+          {
+            status: false,
+            message: "Student already in the class",
+            error,
+          },
+          409
+        );
       }
 
-      if (error.name === "ValidationError") {
-        return res.status(400).json({
-          status: false,
-          message: "Validation error. Please provide correct data",
-          error: error.errors,
-        });
+      if (error.name === "ZodError") {
+        return c.json(
+          {
+            status: false,
+            message: "Validation error. Please provide correct data",
+            error: error.errors,
+          },
+          400
+        );
       }
       console.log(error);
-      res.status(500).json({
-        status: false,
-        message: "Internal Server Error",
-        error,
-      });
+      return c.json(
+        {
+          status: false,
+          message: "Internal Server Error",
+          error,
+        },
+        500
+      );
     }
   }
 );

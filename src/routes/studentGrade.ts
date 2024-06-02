@@ -1,29 +1,39 @@
-import express from "express";
-import multer from "multer";
-import { auth, validateSchema } from "../middleware";
-import { xlsxFileSchema } from "../schemas";
+import { auth } from "../middleware";
+import { studentGradeSchema, xlsxFileSchema } from "../schemas";
 import { extractXlsx } from "../utils";
 import { StudentGrade } from "@prisma/client";
 import prisma from "../database";
+import { Hono } from "hono";
+import { zValidator } from "@hono/zod-validator";
 
-const upload = multer();
-const RouterStudentGrade = express.Router();
+const RouterStudentGrade = new Hono();
 
 RouterStudentGrade.put(
   "/:gradingSystemId",
   auth,
-  upload.single("grade"),
-  validateSchema(xlsxFileSchema),
-  async (req, res) => {
-    const gradingSystemId = req.params.gradingSystemId;
-    const file = req.file;
+  zValidator("form", xlsxFileSchema),
+  async (c) => {
+    const { gradingSystemId } = c.req.param();
+    const { file } = c.req.valid("form");
     try {
-      const data = extractXlsx(file);
+      const data = await extractXlsx(file);
       const parsedData: Pick<StudentGrade, "rawGrade" | "studentNim">[] =
         data.map((item: any) => ({
-          rawGrade: item.grade,
-          studentNim: item.nim.toString(),
+          rawGrade: item?.grade,
+          studentNim: item?.nim?.toString(),
         }));
+
+      const validation = await studentGradeSchema.spa(parsedData);
+      if (!validation.success) {
+        return c.json(
+          {
+            status: false,
+            message: "Please provide valid xlsx data",
+            error: validation.error,
+          },
+          400
+        );
+      }
 
       const targetGrade = await prisma.gradingSystem.findUnique({
         where: {
@@ -32,10 +42,13 @@ RouterStudentGrade.put(
       });
 
       if (!targetGrade) {
-        return res.status(404).json({
-          status: false,
-          message: "Grading System not found",
-        });
+        return c.json(
+          {
+            status: false,
+            message: "Grading System not found",
+          },
+          404
+        );
       }
 
       const result = await prisma.$transaction(async (prisma) => {
@@ -63,25 +76,31 @@ RouterStudentGrade.put(
           })
         );
       });
-      res.status(200).json({
+      return c.json({
         status: true,
         message: "Grade insert successfully",
         data: result,
       });
-    } catch (error) {
+    } catch (error: any) {
       if (error.code === "P2003") {
-        return res.status(404).json({
-          status: false,
-          message: "Student nim on the list not found",
-          error,
-        });
+        return c.json(
+          {
+            status: false,
+            message: "Student nim on the list not found",
+            error,
+          },
+          404
+        );
       }
       console.log(error);
-      res.status(500).json({
-        status: false,
-        message: "Internal Server Error",
-        error,
-      });
+      return c.json(
+        {
+          status: false,
+          message: "Internal Server Error",
+          error,
+        },
+        500
+      );
     }
   }
 );
