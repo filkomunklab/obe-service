@@ -11,5 +11,6 @@ export default async function clearDatabase() {
     prisma.curriculum.deleteMany(),
     prisma.userRole.deleteMany(),
     prisma.student.deleteMany(),
+    prisma.employee.deleteMany(),
   ]);
 }
