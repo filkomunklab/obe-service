@@ -2,7 +2,12 @@
   "scripts": {
     "dev": "bun run --hot src/index.ts",
     "prestart": "bunx prisma db pull && bunx prisma generate",
-    "start": "bun run src/index.ts"
+    "start": "bun run src/index.ts",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "db:deploy": "bunx prisma migrate deploy",
+    "test": "bun --env-file=.env.test test",
+    "pretest": "bun docker:up && bun --env-file=.env.test run db:deploy"
   },
   "dependencies": {
     "@hono/zod-validator": "^0.2.1",
@@ -12,6 +17,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@faker-js/faker": "^8.4.1",
     "@types/bun": "latest",
     "prisma": "^5.14.0"
   }

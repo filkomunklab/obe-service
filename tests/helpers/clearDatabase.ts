@@ -9,5 +9,7 @@ export default async function clearDatabase() {
     prisma.rps.deleteMany(),
     prisma.subject.deleteMany(),
     prisma.curriculum.deleteMany(),
+    prisma.userRole.deleteMany(),
+    prisma.student.deleteMany(),
   ]);
 }

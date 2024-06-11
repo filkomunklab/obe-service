@@ -1,5 +1,5 @@
 import app from "./app";
-import Config from "./config/config";
+import Config from "./config";
 
 const server = Bun.serve({
   port: Config.PORT,
