@@ -1,13 +1,8 @@
-type Params = {
-  teacherId: string;
-  subjectId: string;
-  supportedCplIds: string[];
-};
-export default function createRpsData({
-  teacherId,
-  subjectId,
-  supportedCplIds,
-}: Params) {
+export default function createRpsData(
+  teacherId: string,
+  subjectId: string,
+  supportedCplIds: string[]
+) {
   return {
     teacherId,
     subjectId,

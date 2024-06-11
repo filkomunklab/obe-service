@@ -95,11 +95,7 @@ beforeAll(async () => {
 
     // create RPS
     const body = JSON.stringify(
-      createRpsData({
-        subjectId: subjectId,
-        teacherId: teacherId,
-        supportedCplIds: supportedCplIds,
-      })
+      createRpsData(teacherId, subjectId, supportedCplIds)
     );
     const resRps = await app.request("/api/rps", {
       method: "POST",
@@ -133,7 +129,7 @@ beforeAll(async () => {
 afterAll(async () => {
   try {
     await clearDatabase();
-    await unlink("tests/temp/studentdata.xlsx");
+    await unlink(studentNameFile);
   } catch (error) {
     console.log(error);
   }
