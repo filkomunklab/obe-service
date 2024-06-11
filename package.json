@@ -5,9 +5,11 @@
     "start": "bun run src/index.ts",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
+    "docker:rm": "docker compose rm -s -f -v",
     "db:deploy": "bunx prisma migrate deploy",
+    "pretest": "bun run docker:up && sleep 1 && bun --env-file=.env.test run db:deploy",
     "test": "bun --env-file=.env.test test",
-    "pretest": "bun docker:up && bun --env-file=.env.test run db:deploy"
+    "posttest": "bun run docker:rm"
   },
   "dependencies": {
     "@hono/zod-validator": "^0.2.1",
