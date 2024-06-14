@@ -1,9 +1,9 @@
 // import jwt from "jsonwebtoken";
 import { getToken } from "../utils";
 import prisma from "../database";
-import Config from "../config/config";
+import Config from "../config";
 import { ExtendedContext } from "../../global";
-import { Context, Next } from "hono";
+import { Next } from "hono";
 import { verify } from "hono/jwt";
 
 export default async function auth(c: ExtendedContext, next: Next) {
@@ -17,7 +17,6 @@ export default async function auth(c: ExtendedContext, next: Next) {
       );
     }
 
-    // c.req.user = jwt.verify(token, Config.SECRET_KEY);
     c.req.user = await verify(token, Config.SECRET_KEY);
     const isAdmin = await prisma.admin.findUnique({
       where: {

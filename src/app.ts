@@ -16,7 +16,7 @@ import RouterReportSummary from "./routes/reportSummary";
 const app = new Hono();
 
 app.use(prettyJSON());
-app.use(logger()); // log request
+process.env.NODE_ENV !== "test" && app.use(logger()); // log request
 app.use(
   "/static/*",
   serveStatic({

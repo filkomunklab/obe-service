@@ -1,11 +1,13 @@
-import { describe, expect, it, beforeAll } from "bun:test";
+import { describe, expect, it, beforeAll, afterAll } from "bun:test";
 import app from "../src/app";
 import prisma from "../src/database";
-import { clearDatabase } from "./helpers";
+import { clearDatabase, populateDatabase } from "./helpers";
+import Config from "../src/config";
+import { sign } from "hono/jwt";
 
-const token =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoiMDliOTFmZjQtMGY0My00ZjU0LWE2ODctZWIwZGRlZTA5YjA3IiwibmlrIjoiMTEwNjA2MDExNTUiLCJuYW1lIjoiQW5kcmV3IFRhbm55ICBMaWVtIiwicm9sZSI6WyJERUtBTiJdfSwiaWF0IjoxNzE2NjgyMjY3fQ.M5GIsprqN76szJueWQTluJakZpKOEhoEPU73rY3qjgc";
+let token: string;
 let targetSubject: string;
+let headOfProgramStudyId: string;
 let cpl: {
   id: string;
   code: string;
@@ -18,7 +20,25 @@ let cpl: {
 beforeAll(async () => {
   try {
     // Clear all data
-    await clearDatabase();
+    const entity = await populateDatabase();
+
+    // simulate login
+    token = await sign(
+      {
+        user: {
+          id: entity.kaprodi.id,
+          nik: entity.kaprodi.nik,
+          name: `${entity.kaprodi.firstName} ${entity.kaprodi.lastName}`,
+          role: entity.kaprodi.role.map((item) => item.role),
+        },
+      },
+      Config.SECRET_KEY
+    );
+    await prisma.employee.update({
+      where: { id: entity.kaprodi.id },
+      data: { token },
+    });
+    headOfProgramStudyId = entity.kaprodi.id;
 
     // Create new curriculum
     const path = "./tests/testFiles/Kurikulum FILKOM IF 2023 - example.xlsx";
@@ -26,10 +46,7 @@ beforeAll(async () => {
     let formData = new FormData();
     formData.append("major", "IF");
     formData.append("year", "2021");
-    formData.append(
-      "headOfProgramStudyId",
-      "fb990cd6-1318-4232-97b1-88c0f3b20e6d"
-    );
+    formData.append("headOfProgramStudyId", headOfProgramStudyId);
     formData.append("curriculumFile", file);
     const curriculum = await app.request("/api/curriculum", {
       method: "POST",
@@ -59,6 +76,14 @@ beforeAll(async () => {
       },
       take: 3,
     });
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+afterAll(async () => {
+  try {
+    await clearDatabase();
   } catch (error) {
     console.log(error);
   }

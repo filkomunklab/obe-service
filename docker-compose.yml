@@ -1,14 +1,13 @@
 version: "3.1"
 
 services:
-  database:
+  db:
     image: postgres:16
     restart: always
-    environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: postgres
+    container_name: postgres-test-db
     ports:
-      - ${DB_PORT}:5432
-    volumes:
-      - ./database:/var/lib/postgresql/data
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: prisma
+      POSTGRES_PASSWORD: prisma
+      POSTGRES_DB: tests
