@@ -32,6 +32,7 @@ app.use(
       "https://filkom.investsulut.id",
       "https://hgdxm2td-3000.asse.devtunnels.ms",
       "https://app.filkom.unklab.ac.id",
+      "http://app.filkom.unklab.ac.id",
     ],
   })
 );
