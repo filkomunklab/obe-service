@@ -6,6 +6,7 @@
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
     "docker:rm": "docker compose rm -s -f -v",
+    "docker:build": "docker build -t obe-service .",
     "db:deploy": "bunx prisma migrate dev",
     "pretest": "bun install && bun run docker:up && sleep 1 && bun --env-file=.env.test run db:deploy",
     "test": "bun --env-file=.env.test test",
