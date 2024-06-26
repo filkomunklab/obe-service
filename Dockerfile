@@ -1,18 +1,13 @@
-# Base image
-FROM node:20
-# Setting work directory
-WORKDIR /usr/app
-# Copy package.json and package-lock.json (if available)
-COPY package*.json ./
-# Install Prisma dependencies
-RUN apt-get update && apt-get install -y libssl-dev
-# Install Loglask dependencies
-RUN npm install
-# Prisma generate
-RUN npx prisma generate
-# Copy source files
+# use the official Bun image
+# see all versions at https://hub.docker.com/r/oven/bun/tags
+FROM oven/bun:1 as base
+WORKDIR /usr/src/app
+
+# copy all required files
 COPY . .
-# Expose port 3000
+
+# install all deps
+RUN bun install -p
+
 EXPOSE 3000
-# Start the server
-CMD [ "npm", "start" ]
+ENTRYPOINT [ "bun", "start" ]
