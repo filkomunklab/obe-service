@@ -9,5 +9,5 @@ COPY . .
 # install all deps
 RUN bun install -p
 
-EXPOSE 3000
+EXPOSE 2001
 ENTRYPOINT [ "bun", "start" ]
