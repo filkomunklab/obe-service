@@ -28,11 +28,9 @@ app.use(
   cors({
     origin: [
       "http://localhost:3000",
-      "https://outcome-based.vercel.app",
-      "https://filkom.investsulut.id",
-      "https://hgdxm2td-3000.asse.devtunnels.ms",
       "https://app.filkom.unklab.ac.id",
       "http://app.filkom.unklab.ac.id",
+      "http://103.59.95.208:3000",
     ],
   })
 );
