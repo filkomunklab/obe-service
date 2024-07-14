@@ -46,15 +46,17 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          PORT: ${{ secrets.PORT }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           password: ${{ secrets.SSH_PASSWORD }}
-          envs: POSTGRES_USER,POSTGRES_PASSWORD,POSTGRES_DB,POSTGRES_PORT,PORT,SECRET_KEY,FIREBASE_API_KEY,DATABASE_URL
+          envs: SECRET_KEY,DATABASE_URL,PORT
           script: |
             cd obe
             echo "DATABASE_URL=${DATABASE_URL}" >> .env
             echo "SECRET_KEY=${SECRET_KEY}" >> .env
+            echo "PORT=${PORT}" >> .env
             sudo docker compose down
             sudo docker compose pull
             sudo docker compose up -d obe
