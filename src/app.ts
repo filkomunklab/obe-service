@@ -31,6 +31,7 @@ app.use(
       "https://app.filkom.unklab.ac.id",
       "http://app.filkom.unklab.ac.id",
       "http://103.59.95.208:3000",
+      "https://103.59.95.208:3000",
     ],
   })
 );
