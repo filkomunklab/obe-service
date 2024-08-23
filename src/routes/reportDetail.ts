@@ -123,7 +123,7 @@ RouterReportDetail.put("/:rpsId", auth, async (c) => {
       parallel: rps.parallel,
       teacher: `${rps.teacher.firstName} ${rps.teacher.lastName}`,
       schedule: rps.schedule,
-      studentGrade: groupGradingSystem,
+      studentGrade: JSON.stringify(groupGradingSystem),
       updateAt: new Date(),
     };
 
